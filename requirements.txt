@@ -1,0 +1,5 @@
+python-frontmatter>=1.0.0
+markdown>=3.5.0
+jieba>=0.42.1
+pytest>=7.4.0
+pytest-cov>=4.1.0
