@@ -13,6 +13,7 @@ from src.discovery.models.gap import KnowledgeGap, GapType
 from src.discovery.models.insight import Insight, InsightType
 from src.discovery.config import DiscoveryConfig
 from src.discovery.relation_miner import RelationMiningEngine
+from src.discovery.pattern_detector import PatternDetector
 
 __all__ = [
     'Pattern', 'PatternType',
@@ -20,4 +21,5 @@ __all__ = [
     'Insight', 'InsightType',
     'DiscoveryConfig',
     'RelationMiningEngine',
+    'PatternDetector',
 ]
