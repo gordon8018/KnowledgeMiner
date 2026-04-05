@@ -1,0 +1,40 @@
+# config/default.yaml
+knowledge_compiler:
+  # LLM Configuration
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-6"
+    api_key_env: "ANTHROPIC_API_KEY"
+    temperature: 0.3
+    max_tokens: 4096
+    timeout: 60
+    max_retries: 3
+
+  # Storage Configuration
+  storage:
+    raw_dir: "./raw"
+    wiki_dir: "./wiki"
+    cache_dir: "./cache"
+    database_url: "sqlite:///./knowledge.db"
+    enable_backups: true
+
+  # Processing Configuration
+  processing:
+    max_file_size: 10485760  # 10MB
+    batch_size: 10
+    parallel_workers: 4
+    incremental_updates: true
+    cache_embeddings: true
+
+  # Quality Thresholds
+  quality:
+    min_document_quality: 0.6
+    min_concept_confidence: 0.7
+    min_relation_confidence: 0.6
+
+  # Logging Configuration
+  logging:
+    level: "INFO"
+    format: "structured"
+    file: "./logs/compiler.log"
+    rotation: "daily"
