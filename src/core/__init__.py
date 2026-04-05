@@ -32,6 +32,12 @@ from src.core.concept_model import (
     EnhancedConcept,
 )
 
+# Import relation model (Task 5)
+from src.core.relation_model import (
+    RelationType,
+    Relation,
+)
+
 __all__ = [
     # Base Models (Task 2)
     "BaseModel",
@@ -52,4 +58,7 @@ __all__ = [
     "ConceptType",
     "TemporalInfo",
     "EnhancedConcept",
+    # Relation Model (Task 5)
+    "RelationType",
+    "Relation",
 ]
