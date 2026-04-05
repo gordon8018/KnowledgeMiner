@@ -25,6 +25,13 @@ from src.core.document_model import (
     EnhancedDocument,
 )
 
+# Import concept model (Task 4)
+from src.core.concept_model import (
+    ConceptType,
+    TemporalInfo,
+    EnhancedConcept,
+)
+
 __all__ = [
     # Base Models (Task 2)
     "BaseModel",
@@ -41,4 +48,8 @@ __all__ = [
     # Document Model (Task 3)
     "DocumentMetadata",
     "EnhancedDocument",
+    # Concept Model (Task 4)
+    "ConceptType",
+    "TemporalInfo",
+    "EnhancedConcept",
 ]
