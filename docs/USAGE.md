@@ -1,16 +1,25 @@
 # Knowledge Compiler Usage Guide
 
-This guide provides detailed instructions for using the Knowledge Compiler to process and transform your markdown documents into a structured knowledge base.
+This guide provides detailed instructions for using the Knowledge Compiler 2.0 to process and transform your markdown documents into a structured knowledge base.
+
+## What's New in Phase 1
+
+- **Enhanced Configuration System**: Hierarchical, validated configuration
+- **LLM Integration**: Support for OpenAI, Anthropic Claude, and Ollama
+- **Embedding Generation**: Automatic semantic embeddings for search
+- **State Management**: Persistent state for incremental compilation
+- **Improved Data Models**: Better validation and serialization
 
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
 2. [Configuration](#configuration)
-3. [Command Line Usage](#command-line-usage)
-4. [Programmatic Usage](#programmatic-usage)
-5. [Interactive Mode](#interactive-mode)
-6. [Advanced Features](#advanced-features)
-7. [Troubleshooting](#troubleshooting)
+3. [Phase 1 Features](#phase-1-features)
+4. [Command Line Usage](#command-line-usage)
+5. [Programmatic Usage](#programmatic-usage)
+6. [Interactive Mode](#interactive-mode)
+7. [Advanced Features](#advanced-features)
+8. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -20,6 +29,8 @@ This guide provides detailed instructions for using the Knowledge Compiler to pr
 - Required dependencies (see `requirements.txt`)
 - Source markdown documents
 - Output directory for processed content
+- (Optional) API keys for LLM providers (OpenAI, Anthropic)
+- (Optional) Ollama installation for local models
 
 ### Basic Setup
 
@@ -29,26 +40,123 @@ This guide provides detailed instructions for using the Knowledge Compiler to pr
    ```
 
 2. **Configure your settings:**
+
+   **Phase 1 Configuration:**
    ```json
    {
      "source_dir": "./docs",
      "output_dir": "./wiki",
      "interactive_mode": true,
-     "verbose_output": true
+     "verbose_output": true,
+     "llm": {
+       "provider": "openai",
+       "model": "gpt-4",
+       "api_key": "your-api-key",
+       "temperature": 0.7
+     },
+     "embeddings": {
+       "enabled": true,
+       "model": "text-embedding-ada-002",
+       "batch_size": 100
+     },
+     "state": {
+       "enabled": true,
+       "file": "./state.json"
+     }
+   }
+   ```
+
+   **Legacy Configuration (still supported):**
+   ```json
+   {
+     "source_dir": "./docs",
+     "output_dir": "./wiki",
+     "interactive_mode": true,
+     "verbose_output": true,
+     "api_key": "your-api-key",
+     "model_name": "gpt-3.5-turbo",
+     "temperature": 0.7
    }
    ```
 
 3. **Run the compiler:**
    ```python
    from src.main import KnowledgeCompiler
+   from src.core.config import get_config
 
+   # Phase 1: Using new configuration
+   config = get_config()
+   config.source_dir = "./docs"
+   config.output_dir = "./wiki"
+   config.llm.provider = "openai"
+   config.llm.model = "gpt-4"
+
+   compiler = KnowledgeCompiler(config)
+   results = compiler.compile()
+
+   # Or use legacy approach
    compiler = KnowledgeCompiler()
    results = compiler.compile()
    ```
 
 ## Configuration
 
-### Configuration File Structure
+### Phase 1 Configuration Structure
+
+The new configuration system is hierarchical and provides better validation:
+
+```json
+{
+  "source_dir": "path/to/source/documents",
+  "output_dir": "path/to/output/directory",
+  "file_patterns": ["*.md", "*.markdown"],
+  "recursive_processing": true,
+
+  "llm": {
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": "your-api-key",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "timeout": 30,
+    "max_retries": 3
+  },
+
+  "embeddings": {
+    "enabled": true,
+    "model": "text-embedding-ada-002",
+    "batch_size": 100,
+    "dimension": 1536
+  },
+
+  "state": {
+    "enabled": true,
+    "file": "./state.json",
+    "auto_save": true,
+    "save_interval": 60
+  },
+
+  "processing": {
+    "max_file_size": 10485760,
+    "max_concepts_per_document": 20,
+    "min_confidence_threshold": 0.6,
+    "enable_relation_extraction": true
+  },
+
+  "output": {
+    "generate_backlinks": true,
+    "generate_summaries": true,
+    "generate_articles": true,
+    "output_format": "markdown"
+  },
+
+  "interactive_mode": true,
+  "verbose_output": false,
+  "quiet_mode": false
+}
+```
+
+### Legacy Configuration File Structure
 
 Create a `config.json` file with the following structure:
 
@@ -108,6 +216,433 @@ Create a `config.json` file with the following structure:
 - `interactive_mode`: Enable interactive features
 - `verbose_output`: Enable verbose logging
 - `quiet_mode`: Suppress non-error messages
+
+## Phase 1 Features
+
+### 1. LLM Integration
+
+The Knowledge Compiler now supports multiple LLM providers for enhanced concept extraction and content generation.
+
+#### Supported Providers
+
+**OpenAI**
+```python
+from src.core.config import get_config
+
+config = get_config()
+config.llm.provider = "openai"
+config.llm.model = "gpt-4"  # or "gpt-3.5-turbo"
+config.llm.api_key = "sk-..."
+config.llm.temperature = 0.7
+config.llm.max_tokens = 2000
+```
+
+**Anthropic Claude**
+```python
+config.llm.provider = "anthropic"
+config.llm.model = "claude-3-opus-20240229"  # or "claude-3-sonnet-20240229"
+config.llm.api_key = "sk-ant-..."
+```
+
+**Ollama (Local Models)**
+```python
+config.llm.provider = "ollama"
+config.llm.model = "llama2"  # or "mistral", "neural-chat", etc.
+config.llm.base_url = "http://localhost:11434"  # Optional
+```
+
+#### Using LLM Providers
+
+```python
+from src.main import KnowledgeCompiler
+from src.integrations.llm_providers import create_llm_provider
+
+# Method 1: Through configuration
+config = get_config()
+config.llm.provider = "openai"
+config.llm.model = "gpt-4"
+
+compiler = KnowledgeCompiler(config)
+results = compiler.compile()
+
+# Method 2: Direct provider usage
+provider = create_llm_provider(
+    provider="openai",
+    model="gpt-4",
+    api_key="your-key"
+)
+
+response = provider.generate(
+    prompt="Extract key concepts from this text...",
+    temperature=0.7
+)
+```
+
+#### Error Handling and Retries
+
+LLM providers include automatic retry logic with exponential backoff:
+
+```python
+# Configure retry behavior
+config.llm.max_retries = 3
+config.llm.retry_delay = 1.0  # seconds
+config.llm.timeout = 30  # seconds
+
+# The provider will automatically retry on transient errors
+```
+
+### 2. Embedding Generation
+
+Generate semantic embeddings for concepts and documents to enable similarity search and clustering.
+
+#### Enabling Embeddings
+
+```python
+config = get_config()
+config.embeddings.enabled = True
+config.embeddings.model = "text-embedding-ada-002"
+config.embeddings.batch_size = 100
+config.embeddings.dimension = 1536  # Model-specific
+```
+
+#### Supported Embedding Models
+
+**OpenAI Embeddings**
+```python
+config.embeddings.provider = "openai"
+config.embeddings.model = "text-embedding-ada-002"  # 1536 dimensions
+# or
+config.embeddings.model = "text-embedding-3-small"   # 1536 dimensions
+# or
+config.embeddings.model = "text-embedding-3-large"   # 3072 dimensions
+```
+
+**Local Embeddings (Future)**
+```python
+# Planned for future releases
+config.embeddings.provider = "local"
+config.embeddings.model = "all-MiniLM-L6-v2"
+```
+
+#### Using Embeddings
+
+```python
+from src.ml.embeddings import EmbeddingGenerator
+
+# After compilation, concepts have embeddings
+compiler = KnowledgeCompiler(config)
+results = compiler.compile()
+
+# Access embeddings
+for concept in compiler.extracted_concepts:
+    if concept.embedding is not None:
+        print(f"Concept: {concept.name}")
+        print(f"Embedding shape: {concept.embedding.shape}")
+
+# Calculate similarity
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+def find_similar_concepts(target_concept, concepts, top_k=5):
+    """Find most similar concepts using embeddings"""
+    if target_concept.embedding is None:
+        return []
+
+    similarities = []
+    for concept in concepts:
+        if concept.embedding is not None and concept != target_concept:
+            sim = cosine_similarity(
+                [target_concept.embedding],
+                [concept.embedding]
+            )[0][0]
+            similarities.append((concept, sim))
+
+    similarities.sort(key=lambda x: x[1], reverse=True)
+    return similarities[:top_k]
+
+# Example usage
+similar = find_similar_concepts(
+    compiler.extracted_concepts[0],
+    compiler.extracted_concepts
+)
+for concept, score in similar:
+    print(f"{concept.name}: {score:.3f}")
+```
+
+#### Embedding Use Cases
+
+1. **Semantic Search**: Find concepts by meaning, not just keywords
+2. **Clustering**: Group similar concepts automatically
+3. **Recommendations**: Suggest related concepts
+4. **Deduplication**: Identify duplicate or very similar concepts
+5. **Visualization**: Plot concept relationships in 2D/3D space
+
+### 3. State Management
+
+Persistent state tracking enables incremental compilation and avoids reprocessing unchanged documents.
+
+#### Enabling State Management
+
+```python
+config = get_config()
+config.state.enabled = True
+config.state.file = "./compilation_state.json"
+config.state.auto_save = True
+config.state.save_interval = 60  # seconds
+```
+
+#### State Features
+
+```python
+from src.core.state_manager import StateManager
+
+# The compiler automatically uses state
+compiler = KnowledgeCompiler(config)
+
+# First run: processes all documents
+results1 = compiler.compile()
+
+# Second run: only processes new/changed documents
+results2 = compiler.compile()
+
+# State includes:
+# - Document hashes (detects changes)
+# - Processed concepts
+# - Compilation metadata
+# - Timestamps
+```
+
+#### Manual State Operations
+
+```python
+# Access state manager
+state_manager = compiler.state_manager
+
+# Get last compilation time
+last_run = state_manager.get_last_run_time()
+
+# Check if document needs processing
+needs_processing = state_manager.needs_processing(document_path)
+
+# Manually save state
+state_manager.save_state()
+
+# Reset state (start fresh)
+state_manager.reset_state()
+```
+
+#### State File Format
+
+```json
+{
+  "version": "2.0",
+  "last_run": "2026-04-05T10:30:00",
+  "documents": {
+    "doc1.md": {
+      "hash": "abc123",
+      "processed_at": "2026-04-05T10:25:00",
+      "concepts_count": 5
+    }
+  },
+  "metadata": {
+    "total_concepts": 150,
+    "total_documents": 30
+  }
+}
+```
+
+### 4. Enhanced Data Models
+
+Phase 1 introduces improved data models with validation and serialization.
+
+#### Enhanced Document Model
+
+```python
+from src.core.document_model import Document
+
+# Create document
+doc = Document(
+    path="./docs/concept.md",
+    title="My Concept",
+    content="# Content...",
+    metadata={"author": "John"},
+    sections=[],
+    hash="abc123"
+)
+
+# Validate structure
+is_valid = doc.validate()
+
+# Serialize/Deserialize
+doc_dict = doc.to_dict()
+doc2 = Document.from_dict(doc_dict)
+```
+
+#### Enhanced Concept Model
+
+```python
+from src.core.concept_model import Concept, ConceptType
+
+# Create concept
+concept = Concept(
+    name="Momentum",
+    type=ConceptType.INDICATOR,
+    definition="A technical indicator...",
+    confidence=0.95,
+    metadata={"source": "technical_analysis"}
+)
+
+# Add embedding
+import numpy as np
+concept.embedding = np.random.rand(1536)
+
+# Validate and serialize
+concept.validate()
+concept_dict = concept.to_dict()
+```
+
+#### Relation Model (New)
+
+```python
+from src.core.relation_model import Relation, RelationType
+
+# Create relation
+relation = Relation(
+    source="Momentum",
+    target="RSI",
+    relation_type=RelationType.RELATES_TO,
+    strength=0.8,
+    metadata={"context": "technical_analysis"}
+)
+
+# Serialize
+relation_dict = relation.to_dict()
+```
+
+### 5. Configuration Management
+
+#### Loading Configuration
+
+```python
+from src.core.config import Config, get_config
+
+# Method 1: Get default config
+config = get_config()
+
+# Method 2: Load from file
+config = Config.from_file("config.json")
+
+# Method 3: Load from dict
+config = Config.from_dict({
+    "source_dir": "./docs",
+    "llm": {"provider": "openai"}
+})
+
+# Method 4: Environment variables
+import os
+config = get_config()
+config.llm.api_key = os.getenv("OPENAI_API_KEY")
+```
+
+#### Validating Configuration
+
+```python
+# Validate before use
+try:
+    config.validate()
+    print("Configuration is valid")
+except ValueError as e:
+    print(f"Configuration error: {e}")
+```
+
+#### Saving Configuration
+
+```python
+# Save to file
+config.save_to_file("my_config.json")
+
+# Export as dict
+config_dict = config.to_dict()
+```
+
+### 6. Advanced Usage Examples
+
+#### Combining Phase 1 Features
+
+```python
+from src.main import KnowledgeCompiler
+from src.core.config import get_config
+
+# Create comprehensive config
+config = get_config()
+config.source_dir = "./docs"
+config.output_dir = "./output"
+
+# Enable LLM
+config.llm.provider = "openai"
+config.llm.model = "gpt-4"
+config.llm.api_key = os.getenv("OPENAI_API_KEY")
+
+# Enable embeddings
+config.embeddings.enabled = True
+config.embeddings.model = "text-embedding-ada-002"
+
+# Enable state
+config.state.enabled = True
+config.state.file = "./state.json"
+
+# Run compilation
+compiler = KnowledgeCompiler(config)
+results = compiler.compile()
+
+# Use embeddings for similarity search
+target = compiler.extracted_concepts[0]
+similar = find_similar_concepts(target, compiler.extracted_concepts)
+print(f"Concepts similar to {target.name}:")
+for concept, score in similar:
+    print(f"  {concept.name}: {score:.3f}")
+```
+
+#### Incremental Compilation
+
+```python
+# First run
+config.state.enabled = True
+compiler = KnowledgeCompiler(config)
+results1 = compiler.compile()
+print(f"Processed {results1['processed_files']} files")
+
+# Modify one document
+# ...
+
+# Second run (only processes modified document)
+results2 = compiler.compile()
+print(f"Processed {results2['processed_files']} files (should be 1)")
+```
+
+#### Error Handling
+
+```python
+# Configure robust error handling
+config.llm.max_retries = 5
+config.llm.timeout = 60
+
+# Handle errors gracefully
+try:
+    results = compiler.compile()
+except Exception as e:
+    print(f"Compilation failed: {e}")
+
+    # Check state
+    if config.state.enabled:
+        state = compiler.state_manager.get_state()
+        print(f"Last successful run: {state['last_run']}")
+
+    # Retry with different config
+    config.llm.provider = "ollama"  # Fallback to local
+    compiler = KnowledgeCompiler(config)
+    results = compiler.compile()
+```
 
 ## Command Line Usage
 
