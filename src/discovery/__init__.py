@@ -15,6 +15,7 @@ from src.discovery.config import DiscoveryConfig
 from src.discovery.relation_miner import RelationMiningEngine
 from src.discovery.pattern_detector import PatternDetector
 from src.discovery.gap_analyzer import GapAnalyzer
+from src.discovery.insight_generator import InsightGenerator
 
 __all__ = [
     'Pattern', 'PatternType',
@@ -24,4 +25,5 @@ __all__ = [
     'RelationMiningEngine',
     'PatternDetector',
     'GapAnalyzer',
+    'InsightGenerator',
 ]
