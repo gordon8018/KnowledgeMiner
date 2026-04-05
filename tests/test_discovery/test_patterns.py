@@ -109,3 +109,30 @@ def test_bin_time_references():
     # Check that counts sum to total references
     total_count = sum(count for _, _, count in bins)
     assert total_count == len(times)
+
+
+def test_bin_single_date():
+    """Test binning with single date (edge case fix)."""
+    times = [datetime(2024, 1, 15)]
+
+    bins = bin_time_references(times, bin_size_days=30)
+
+    # Should return 1 bin for single date, not empty
+    assert len(bins) == 1
+    start, end, count = bins[0]
+    assert count == 1
+    assert start <= times[0] < end
+
+
+def test_detect_periodicity_identical_dates():
+    """Test periodicity detection with identical dates (edge case fix)."""
+    times = [
+        datetime(2024, 1, 1),
+        datetime(2024, 1, 1),  # Identical dates
+        datetime(2024, 1, 1),
+    ]
+
+    periods = detect_periodicity(times)
+
+    # Should not detect false periodicity from zero intervals
+    assert len(periods) == 0

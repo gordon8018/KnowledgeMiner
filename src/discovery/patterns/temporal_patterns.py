@@ -73,7 +73,13 @@ def detect_periodicity(time_references: List[datetime], tolerance_days: int = 7)
     if not intervals:
         return periods
 
-    avg_interval = sum(intervals) / len(intervals)
+    # Filter out zero intervals (identical dates) to avoid false positives
+    valid_intervals = [i for i in intervals if i > 0]
+
+    if not valid_intervals:
+        return periods  # All intervals are zero, no periodicity
+
+    avg_interval = sum(valid_intervals) / len(valid_intervals)
 
     # Check for weekly pattern (around 7 days)
     if abs(avg_interval - 7) <= tolerance_days:
@@ -116,7 +122,8 @@ def bin_time_references(time_references: List[datetime], bin_size_days: int = 30
     bins = []
     current_start = min_time
 
-    while current_start < max_time:
+    # Use <= to ensure we capture the last bin, especially for single dates
+    while current_start <= max_time:
         current_end = current_start + timedelta(days=bin_size_days)
 
         # Count references in this bin

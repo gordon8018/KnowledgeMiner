@@ -37,6 +37,11 @@ class RelationPatternLoader:
 
     Patterns are compiled regex expressions that match text
     indicating relationships between concepts.
+
+    NOTE: Default patterns use \\S+ which matches non-whitespace characters.
+    This means concepts with internal spaces will not be matched by the default
+    patterns. This is an inherent limitation of the specification. For multi-word
+    concepts, consider using custom patterns with more flexible matching.
     """
 
     def __init__(self, custom_patterns: Dict[str, RelationType] = None):
