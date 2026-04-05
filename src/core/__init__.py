@@ -2,11 +2,37 @@
 
 __version__ = "2.0.0"
 
-# Import models when they become available in future tasks
-# This file will be updated as modules are implemented
+# Import base models and configuration (Task 2)
+from src.core.base_models import (
+    BaseModel,
+    SourceType,
+    ProcessingStatus,
+)
+
+from src.core.config import (
+    Config,
+    LLMConfig,
+    StorageConfig,
+    ProcessingConfig,
+    QualityConfig,
+    LoggingConfig,
+    get_config,
+)
 
 __all__ = [
-    "BaseModel",          # Will be available in Task 2
+    # Base Models (Task 2)
+    "BaseModel",
+    "SourceType",
+    "ProcessingStatus",
+    # Configuration (Task 2)
+    "Config",
+    "LLMConfig",
+    "StorageConfig",
+    "ProcessingConfig",
+    "QualityConfig",
+    "LoggingConfig",
+    "get_config",
+    # Future models
     "EnhancedDocument",   # Will be available in Task 3
     "EnhancedConcept",    # Will be available in Task 4
     "Relation",           # Will be available in Task 5
