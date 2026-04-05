@@ -5,7 +5,8 @@ Insight data models.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from src.discovery.models.pattern import Evidence
 
 
 class InsightType(str, Enum):
@@ -27,7 +28,7 @@ class Insight:
     related_concepts: List[str]
     related_patterns: List[str]
     related_gaps: List[str]
-    evidence: List[Any]  # Evidence objects
+    evidence: List[Evidence]  # Evidence objects
     actionable_suggestions: List[str]
     generated_at: datetime
     metadata: Dict[str, Any]

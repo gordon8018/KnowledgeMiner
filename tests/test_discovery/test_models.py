@@ -115,3 +115,40 @@ def test_insight_creation():
 
     assert insight.insight_type == InsightType.PATTERN
     assert insight.significance == 0.85
+
+
+def test_knowledge_gap_validation():
+    """Test KnowledgeGap validation."""
+    from datetime import datetime
+
+    # Test invalid priority
+    with pytest.raises(ValueError):
+        KnowledgeGap(
+            id="gap-1",
+            gap_type=GapType.MISSING_CONCEPT,
+            description="Test",
+            severity=0.5,
+            affected_concepts=[],
+            affected_relations=[],
+            suggested_actions=[],
+            priority=11,  # Invalid: > 10
+            estimated_effort="medium",
+            metadata={},
+            detected_at=datetime.now()
+        )
+
+    # Test invalid estimated_effort
+    with pytest.raises(ValueError):
+        KnowledgeGap(
+            id="gap-1",
+            gap_type=GapType.MISSING_CONCEPT,
+            description="Test",
+            severity=0.5,
+            affected_concepts=[],
+            affected_relations=[],
+            suggested_actions=[],
+            priority=5,
+            estimated_effort="invalid",  # Invalid
+            metadata={},
+            detected_at=datetime.now()
+        )
