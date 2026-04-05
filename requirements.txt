@@ -3,6 +3,7 @@ markdown>=3.5.0
 jieba>=0.42.1
 pytest>=7.4.0
 pytest-cov>=4.1.0
+networkx>=3.0.0
 
 # Phase 1 Dependencies
 pydantic>=2.5.0

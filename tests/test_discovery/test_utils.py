@@ -76,3 +76,66 @@ def test_rank_by_score():
 
     assert ranked[0].name == "B"  # Highest score
     assert ranked[-1].name == "C"  # Lowest score
+
+
+def test_build_relation_graph_multiple_edges():
+    """Test edge weight accumulation when multiple relations exist between same concepts."""
+    relations = [
+        Relation(id="rel1", source_concept="A", target_concept="B", relation_type=RelationType.RELATED_TO, strength=0.5),
+        Relation(id="rel2", source_concept="A", target_concept="B", relation_type=RelationType.RELATED_TO, strength=0.3),
+        Relation(id="rel3", source_concept="A", target_concept="C", relation_type=RelationType.RELATED_TO, strength=0.7),
+    ]
+
+    graph = build_relation_graph(relations)
+
+    # Should have 3 edges (A-B twice, A-C once)
+    assert graph.number_of_edges() == 2
+    # A-B edge should have accumulated weight (0.5 + 0.3 = 0.8) and count of 2
+    assert graph["A"]["B"]["weight"] == 0.8
+    assert graph["A"]["B"]["count"] == 2
+    # A-C edge should have single weight and count
+    assert graph["A"]["C"]["weight"] == 0.7
+    assert graph["A"]["C"]["count"] == 1
+
+
+def test_detect_communities_fallback():
+    """Test community detection fallback behavior when Louvain fails."""
+    # Create a simple graph
+    graph = nx.Graph()
+    graph.add_edges_from([("A", "B"), ("B", "C"), ("D", "E")])
+
+    # This should work normally
+    communities = detect_communities(graph, min_size=2)
+    assert len(communities) >= 1
+
+    # Test with a graph that might trigger fallback
+    # (The function should gracefully handle any exception and return connected components)
+    empty_graph = nx.Graph()
+    empty_graph.add_node("isolated")
+    empty_communities = detect_communities(empty_graph, min_size=1)
+    assert isinstance(empty_communities, list)
+
+
+def test_compute_centrality_empty_graph():
+    """Test centrality computation with an empty graph."""
+    graph = nx.Graph()
+    centrality = compute_centrality(graph)
+
+    assert isinstance(centrality, dict)
+    assert len(centrality) == 0
+
+
+def test_compute_centrality_disconnected_nodes():
+    """Test centrality computation with disconnected nodes."""
+    graph = nx.Graph()
+    graph.add_node("isolated1")
+    graph.add_node("isolated2")
+    graph.add_edge("A", "B")
+
+    centrality = compute_centrality(graph)
+
+    assert isinstance(centrality, dict)
+    assert len(centrality) == 4  # All 4 nodes
+    # Isolated nodes should have centrality of 0.0
+    assert centrality.get("isolated1", 1.0) == 0.0
+    assert centrality.get("isolated2", 1.0) == 0.0

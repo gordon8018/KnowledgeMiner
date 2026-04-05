@@ -4,7 +4,10 @@ Graph processing utilities using NetworkX.
 
 from typing import List, Dict, Tuple, Any
 import networkx as nx
+import logging
 from src.core.relation_model import Relation
+
+logger = logging.getLogger(__name__)
 
 
 def build_relation_graph(relations: List[Relation]) -> nx.Graph:
@@ -78,8 +81,13 @@ def detect_communities(graph: nx.Graph, min_size: int = 3) -> List[List[str]]:
         ]
 
         return filtered_communities
-    except Exception:
-        # Fallback to simple connected components if Louvain fails
+    except (ImportError, AttributeError) as e:
+        # NetworkX version doesn't support community detection
+        logger.warning(f"Community detection not available: {e}. Using connected components fallback.")
+        return [list(comp) for comp in nx.connected_components(graph)]
+    except Exception as e:
+        # Other unexpected errors (e.g., graph structure issues)
+        logger.warning(f"Community detection failed: {e}. Using connected components fallback.")
         return [list(comp) for comp in nx.connected_components(graph)]
 
 
