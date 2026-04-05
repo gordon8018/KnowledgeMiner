@@ -112,6 +112,10 @@ class Config:
         with open(config_path, "r", encoding="utf-8") as f:
             config_dict = yaml.safe_load(f)
 
+        # Handle empty YAML files
+        if config_dict is None:
+            config_dict = {}
+
         return cls(config_dict.get("knowledge_compiler", {}))
 
     def to_dict(self) -> Dict[str, Any]:

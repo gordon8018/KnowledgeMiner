@@ -32,8 +32,4 @@ __all__ = [
     "QualityConfig",
     "LoggingConfig",
     "get_config",
-    # Future models
-    "EnhancedDocument",   # Will be available in Task 3
-    "EnhancedConcept",    # Will be available in Task 4
-    "Relation",           # Will be available in Task 5
 ]
