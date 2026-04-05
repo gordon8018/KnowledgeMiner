@@ -1,10 +1,10 @@
-# Knowledge Compiler 2.0
+# KnowledgeMiner 2.0
 
-A comprehensive system for converting raw markdown documents into structured knowledge bases with automatic concept extraction, categorization, and relationship mapping.
+A comprehensive system for converting raw markdown documents into structured knowledge bases with automatic concept extraction, categorization, relationship mapping, and intelligent knowledge discovery.
 
 ## 🎯 Project Overview
 
-Knowledge Compiler 2.0 is a complete rewrite featuring modular architecture, enhanced data models, LLM integration, and semantic search capabilities. Phase 1 (completed) introduces a robust foundation with pluggable components and improved performance.
+KnowledgeMiner 2.0 is an intelligent knowledge mining system featuring modular architecture, enhanced data models, LLM integration, and semantic search capabilities. Phase 1 establishes a robust foundation with pluggable components, while Phase 2 adds advanced knowledge discovery and insight generation.
 
 ## ✨ Features
 
