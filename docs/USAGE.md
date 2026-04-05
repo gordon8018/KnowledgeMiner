@@ -10,16 +10,26 @@ This guide provides detailed instructions for using the Knowledge Compiler 2.0 t
 - **State Management**: Persistent state for incremental compilation
 - **Improved Data Models**: Better validation and serialization
 
+## What's New in Phase 2
+
+- **Knowledge Discovery Engine**: Intelligent discovery of hidden knowledge patterns
+- **Relation Mining**: Discover explicit, implicit, statistical, and semantic relationships
+- **Pattern Detection**: Identify temporal, causal, evolutionary, and conflict patterns
+- **Gap Analysis**: Find missing concepts, relations, and evidence in your knowledge base
+- **Insight Generation**: Generate actionable insights with significance scoring
+- **Interactive Exploration**: Query your knowledge base with natural language
+
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
 2. [Configuration](#configuration)
 3. [Phase 1 Features](#phase-1-features)
-4. [Command Line Usage](#command-line-usage)
-5. [Programmatic Usage](#programmatic-usage)
-6. [Interactive Mode](#interactive-mode)
-7. [Advanced Features](#advanced-features)
-8. [Troubleshooting](#troubleshooting)
+4. [Phase 2: Knowledge Discovery](#phase-2-knowledge-discovery)
+5. [Command Line Usage](#command-line-usage)
+6. [Programmatic Usage](#programmatic-usage)
+7. [Interactive Mode](#interactive-mode)
+8. [Advanced Features](#advanced-features)
+9. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -643,6 +653,446 @@ except Exception as e:
     compiler = KnowledgeCompiler(config)
     results = compiler.compile()
 ```
+
+## Phase 2: Knowledge Discovery
+
+Phase 2 introduces the Knowledge Discovery Engine, a powerful system for automatically discovering hidden patterns, relationships, and insights in your knowledge base.
+
+### Overview
+
+The Knowledge Discovery Engine performs four main tasks:
+
+1. **Relation Mining**: Discovers relationships between concepts
+   - Explicit relations (directly stated in text)
+   - Implicit relations (inferred from context)
+   - Statistical relations (based on co-occurrence)
+   - Semantic relations (using embeddings and LLM)
+
+2. **Pattern Detection**: Identifies patterns in your knowledge
+   - Temporal patterns (time-based evolution)
+   - Causal patterns (cause-effect relationships)
+   - Evolutionary patterns (concept development over time)
+   - Conflict patterns (contradictions and tensions)
+
+3. **Gap Analysis**: Finds missing knowledge
+   - Missing concepts (gaps in concept space)
+   - Missing relations (disconnected concepts)
+   - Missing evidence (unsupported claims)
+
+4. **Insight Generation**: Creates actionable insights
+   - Synthesizes patterns and gaps
+   - Scores by significance
+   - Provides actionable suggestions
+
+### Basic Usage
+
+```python
+from src.discovery import (
+    KnowledgeDiscoveryEngine,
+    DiscoveryConfig
+)
+
+# Create configuration
+config = DiscoveryConfig(
+    enable_explicit_mining=True,
+    enable_implicit_mining=True,
+    enable_statistical_mining=True,
+    enable_semantic_mining=True,
+    enable_temporal_detection=True,
+    enable_causal_detection=True,
+    enable_evolutionary_detection=True,
+    enable_conflict_detection=True,
+    enable_concept_gap_analysis=True,
+    enable_relation_gap_analysis=True,
+    enable_evidence_analysis=True
+)
+
+# Initialize engine
+engine = KnowledgeDiscoveryEngine(config)
+
+# Run discovery
+result = engine.discover(
+    documents=your_documents,
+    concepts=your_concepts,
+    relations=existing_relations  # optional
+)
+
+# Access results
+print(f"Discovered {len(result.relations)} relations")
+print(f"Detected {len(result.patterns)} patterns")
+print(f"Found {len(result.gaps)} gaps")
+print(f"Generated {len(result.insights)} insights")
+```
+
+### Configuration Options
+
+#### Relation Mining Settings
+
+```python
+config = DiscoveryConfig(
+    # Enable/disable mining types
+    enable_explicit_mining=True,      # Mine explicitly stated relations
+    enable_implicit_mining=True,      # Infer relations from context
+    enable_statistical_mining=True,   # Use co-occurrence statistics
+    enable_semantic_mining=True,      # Use embeddings and LLM
+
+    # Quality filters
+    min_relation_confidence=0.6,      # Minimum confidence for relations
+    max_relations_per_concept=50      # Limit relations per concept
+)
+```
+
+#### Pattern Detection Settings
+
+```python
+config = DiscoveryConfig(
+    # Enable/disable pattern types
+    enable_temporal_detection=True,      # Detect time-based patterns
+    enable_causal_detection=True,        # Detect cause-effect patterns
+    enable_evolutionary_detection=True,  # Detect evolutionary patterns
+    enable_conflict_detection=True,      # Detect conflicts/contradictions
+
+    # Quality filters
+    min_pattern_confidence=0.5           # Minimum confidence for patterns
+)
+```
+
+#### Gap Analysis Settings
+
+```python
+config = DiscoveryConfig(
+    # Enable/disable gap types
+    enable_concept_gap_analysis=True,    # Find missing concepts
+    enable_relation_gap_analysis=True,   # Find missing relations
+    enable_evidence_analysis=True,       # Find unsupported claims
+
+    # Quality filters
+    min_evidence_confidence=0.4          # Minimum evidence confidence
+)
+```
+
+#### Insight Generation Settings
+
+```python
+config = DiscoveryConfig(
+    # Generation limits
+    max_insights=100,                           # Maximum insights to generate
+    insight_significance_threshold=0.6,         # Minimum significance score
+    enable_actionable_suggestions=True          # Include action items
+)
+```
+
+#### Performance Settings
+
+```python
+config = DiscoveryConfig(
+    # Performance tuning
+    batch_size=10,                      # Batch size for processing
+    parallel_workers=2,                 # Number of parallel workers
+    cache_intermediate_results=True     # Cache intermediate results
+)
+```
+
+### Working with Discovery Results
+
+#### Accessing Relations
+
+```python
+result = engine.discover(documents, concepts, relations)
+
+# Iterate through all relations
+for relation in result.relations:
+    print(f"{relation.source_concept} -> {relation.target_concept}")
+    print(f"  Type: {relation.relation_type}")
+    print(f"  Strength: {relation.strength}")
+    print(f"  Evidence: {relation.evidence_count}")
+
+# Filter by relation type
+from src.core.relation_model import RelationType
+
+causal_relations = [
+    r for r in result.relations
+    if r.relation_type == RelationType.CAUSES
+]
+
+# Filter by strength
+strong_relations = [
+    r for r in result.relations
+    if r.strength >= 0.8
+]
+
+# Get relations for a specific concept
+momentum_relations = [
+    r for r in result.relations
+    if r.source_concept == "Momentum" or r.target_concept == "Momentum"
+]
+```
+
+#### Accessing Patterns
+
+```python
+# Iterate through patterns
+for pattern in result.patterns:
+    print(f"Pattern: {pattern.title}")
+    print(f"  Type: {pattern.pattern_type}")
+    print(f"  Confidence: {pattern.confidence}")
+    print(f"  Concepts: {pattern.related_concepts}")
+
+# Filter by pattern type
+from src.discovery.models.pattern import PatternType
+
+temporal_patterns = [
+    p for p in result.patterns
+    if p.pattern_type == PatternType.TEMPORAL
+]
+
+# Get high-confidence patterns
+high_conf_patterns = [
+    p for p in result.patterns
+    if p.confidence >= 0.7
+]
+```
+
+#### Accessing Gaps
+
+```python
+# Iterate through gaps
+for gap in result.gaps:
+    print(f"Gap: {gap.description}")
+    print(f"  Type: {gap.gap_type}")
+    print(f"  Priority: {gap.priority}")
+    print(f"  Affected concepts: {gap.affected_concepts}")
+
+# Filter by gap type
+from src.discovery.models.gap import GapType
+
+concept_gaps = [
+    g for g in result.gaps
+    if g.gap_type == GapType.MISSING_CONCEPT
+]
+
+# Get high-priority gaps
+urgent_gaps = [
+    g for g in result.gaps
+    if g.priority >= 7
+]
+```
+
+#### Accessing Insights
+
+```python
+# Iterate through insights (sorted by significance)
+for insight in result.insights:
+    print(f"Insight: {insight.title}")
+    print(f"  Significance: {insight.significance}")
+    print(f"  Description: {insight.description}")
+    print(f"  Action items: {insight.action_items}")
+
+# Get top N insights
+top_10_insights = result.insights[:10]
+
+# Filter by significance
+high_value_insights = [
+    i for i in result.insights
+    if i.significance >= 0.8
+]
+```
+
+### Interactive Exploration
+
+The `InteractiveDiscovery` class provides a convenient API for exploring your knowledge base:
+
+```python
+from src.discovery import InteractiveDiscovery, KnowledgeDiscoveryEngine
+
+# Create engine and interactive interface
+engine = KnowledgeDiscoveryEngine(config)
+interactive = InteractiveDiscovery(engine)
+
+# Run discovery and store results
+result = interactive.discover_and_store(
+    documents=documents,
+    concepts=concepts,
+    relations=relations
+)
+
+# Explore relations for a concept
+momentum_relations = interactive.explore_relations("Momentum")
+for rel in momentum_relations:
+    print(f"{rel.source_concept} -> {rel.target_concept}")
+
+# Find patterns by keyword
+trading_patterns = interactive.find_patterns("trading")
+for pattern in trading_patterns:
+    print(f"Found pattern: {pattern.title}")
+
+# Analyze gaps in a domain
+technical_gaps = interactive.analyze_gaps_in_domain("technical")
+for gap in technical_gaps:
+    print(f"Gap: {gap.description}")
+
+# Get top insights
+top_insights = interactive.get_top_insights(10)
+for insight in top_insights:
+    print(f"{insight.title}: {insight.significance}")
+
+# Ask natural language questions
+answer = interactive.ask_question(
+    "How are momentum indicators used in trend following strategies?"
+)
+print(f"Answer: {answer}")
+```
+
+### Advanced Usage Examples
+
+#### Custom Configuration for Pattern Detection
+
+```python
+# Focus on pattern detection only
+config = DiscoveryConfig(
+    # Disable relation mining
+    enable_explicit_mining=False,
+    enable_implicit_mining=False,
+    enable_statistical_mining=False,
+    enable_semantic_mining=False,
+
+    # Enable all pattern detection
+    enable_temporal_detection=True,
+    enable_causal_detection=True,
+    enable_evolutionary_detection=True,
+    enable_conflict_detection=True,
+
+    # Higher confidence threshold
+    min_pattern_confidence=0.7,
+
+    # Disable gap analysis
+    enable_concept_gap_analysis=False,
+    enable_relation_gap_analysis=False,
+    enable_evidence_analysis=False
+)
+
+engine = KnowledgeDiscoveryEngine(config)
+result = engine.discover(documents, concepts)
+
+# Focus on patterns
+print(f"Detected {len(result.patterns)} high-confidence patterns")
+for pattern in result.patterns:
+    print(f"  {pattern.title} (confidence: {pattern.confidence})")
+```
+
+#### Incremental Discovery
+
+```python
+# Start with existing relations from previous runs
+existing_relations = load_previous_relations()  # Your loading logic
+
+config = DiscoveryConfig()
+engine = KnowledgeDiscoveryEngine(config)
+
+# Run incremental discovery
+result = engine.discover(
+    documents=new_documents,
+    concepts=all_concepts,
+    relations=existing_relations  # Build on existing
+)
+
+# Identify new discoveries
+new_relations = set(result.relations) - set(existing_relations)
+print(f"Discovered {len(new_relations)} new relations")
+```
+
+#### Focused Domain Analysis
+
+```python
+# Analyze a specific domain
+config = DiscoveryConfig(
+    # Focus on causal patterns in technical analysis
+    enable_causal_detection=True,
+    enable_evidence_analysis=True,
+    min_relation_confidence=0.7,  # Higher threshold
+    min_pattern_confidence=0.6
+)
+
+engine = KnowledgeDiscoveryEngine(config)
+result = engine.discover(documents, concepts)
+
+# Filter for technical analysis domain
+ta_patterns = [
+    p for p in result.patterns
+    if any("technical" in c.lower() for c in p.related_concepts)
+]
+
+print(f"Found {len(ta_patterns)} technical analysis patterns")
+```
+
+### Integration with Phase 1 Compilation
+
+```python
+from src.main import KnowledgeCompiler
+from src.discovery import KnowledgeDiscoveryEngine
+from src.core.config import get_config
+
+# Step 1: Compile documents (Phase 1)
+config = get_config()
+compiler = KnowledgeCompiler(config)
+compilation_result = compiler.compile()
+
+# Step 2: Run discovery on compiled knowledge (Phase 2)
+discovery_config = DiscoveryConfig()
+discovery_engine = KnowledgeDiscoveryEngine(discovery_config)
+discovery_result = discovery_engine.discover(
+    documents=compiler.processed_documents,
+    concepts=compiler.extracted_concepts
+)
+
+# Now you have both compilation and discovery results
+print(f"Compiled {compilation_result['processed_files']} documents")
+print(f"Discovered {len(discovery_result.relations)} relations")
+print(f"Detected {len(discovery_result.patterns)} patterns")
+```
+
+### Environment Variables
+
+Discovery configuration can also be set via environment variables:
+
+```bash
+# Relation mining
+export KC_DISCOVERY_ENABLE_EXPLICIT_MINING=true
+export KC_DISCOVERY_ENABLE_IMPLICIT_MINING=true
+export KC_DISCOVERY_ENABLE_STATISTICAL_MINING=true
+export KC_DISCOVERY_ENABLE_SEMANTIC_MINING=true
+export KC_DISCOVERY_MIN_RELATION_CONFIDENCE=0.6
+
+# Pattern detection
+export KC_DISCOVERY_ENABLE_TEMPORAL_DETECTION=true
+export KC_DISCOVERY_ENABLE_CAUSAL_DETECTION=true
+export KC_DISCOVERY_MIN_PATTERN_CONFIDENCE=0.5
+
+# Gap analysis
+export KC_DISCOVERY_ENABLE_CONCEPT_GAP_ANALYSIS=true
+export KC_DISCOVERY_ENABLE_RELATION_GAP_ANALYSIS=true
+
+# Insight generation
+export KC_DISCOVERY_MAX_INSIGHTS=100
+export KC_DISCOVERY_INSIGHT_SIGNIFICANCE_THRESHOLD=0.6
+
+# Performance
+export KC_DISCOVERY_BATCH_SIZE=10
+export KC_DISCOVERY_PARALLEL_WORKERS=2
+```
+
+Then use default configuration:
+
+```python
+from src.discovery import DiscoveryConfig
+
+# Config will load from environment variables
+config = DiscoveryConfig()
+```
+
+### Complete Example
+
+See `examples/discovery_example.py` for a complete working example demonstrating all discovery features.
 
 ## Command Line Usage
 
