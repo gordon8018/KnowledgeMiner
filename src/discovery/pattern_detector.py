@@ -124,6 +124,10 @@ class PatternDetector:
             # Calculate confidence based on consistency
             confidence = self._calculate_temporal_confidence(all_time_refs, period)
 
+            # Enforce hard threshold of 0.7 for temporal patterns
+            if confidence < 0.7:
+                continue
+
             # Create evidence from time bins
             bins = bin_time_references(all_time_refs, bin_size_days=30)
             evidence = []
@@ -380,12 +384,11 @@ class PatternDetector:
             source_concept = concept_map.get(rel.source_concept)
             target_concept = concept_map.get(rel.target_concept)
 
-            # Check if both concepts have high confidence
+            # Check if relation has high confidence
             if not source_concept or not target_concept:
                 continue
 
-            if (source_concept.confidence < 0.7 or
-                target_concept.confidence < 0.7):
+            if rel.confidence < 0.7:
                 continue
 
             # Calculate confidence based on relation strength and concept confidence
