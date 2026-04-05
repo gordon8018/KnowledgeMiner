@@ -2,14 +2,12 @@
 
 __version__ = "2.0.0"
 
-from .base_models import BaseModel
-from .document_model import EnhancedDocument
-from .concept_model import EnhancedConcept
-from .relation_model import Relation
+# Import models when they become available in future tasks
+# This file will be updated as modules are implemented
 
 __all__ = [
-    "BaseModel",
-    "EnhancedDocument",
-    "EnhancedConcept",
-    "Relation",
+    "BaseModel",          # Will be available in Task 2
+    "EnhancedDocument",   # Will be available in Task 3
+    "EnhancedConcept",    # Will be available in Task 4
+    "Relation",           # Will be available in Task 5
 ]
