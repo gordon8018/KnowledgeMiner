@@ -96,7 +96,12 @@ class KnowledgeCompiler:
             # Step 2: Extract concepts
             results['extracted_concepts'] = self._extract_concepts()
 
-            # Step 3: Generate outputs
+            # Step 3: Confirm concepts (interactive mode)
+            if self.config.interactive_mode and self.extracted_concepts:
+                self.extracted_concepts = self.confirm_concepts(self.extracted_concepts)
+                results['confirmed_concepts'] = len(self.extracted_concepts)
+
+            # Step 4: Generate outputs
             if self.config.generate_summaries:
                 results['generated_summaries'] = self._generate_summaries()
 
@@ -106,7 +111,7 @@ class KnowledgeCompiler:
             if self.config.generate_backlinks:
                 results['generated_backlinks'] = self._generate_backlinks()
 
-            # Step 4: Generate index and hash files
+            # Step 5: Generate index and hash files
             self._generate_index()
             self._generate_hashes()
 

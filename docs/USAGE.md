@@ -133,9 +133,69 @@ if config.interactive_mode:
     results = compiler.run_interactive_session()
 ```
 
-### CLI Arguments (Future Enhancement)
+### Command Line Interface
 
-Note: Full CLI interface with argparse is planned for future versions. Currently, you need to use the programmatic interface.
+The Knowledge Compiler now provides a comprehensive command-line interface:
+
+```bash
+# Basic usage
+python -m src.main_cli --source ./docs --output ./knowledge_base
+
+# Show help
+python -m src.main_cli --help
+
+# With verbose output
+python -m src.main_cli --source ./docs --output ./knowledge_base --verbose
+
+# Quiet mode
+python -m src.main_cli --source ./docs --output ./knowledge_base --quiet
+
+# Non-interactive mode
+python -m src.main_cli --source ./docs --output ./knowledge_base --no-interactive
+
+# Disable specific outputs
+python -m src.main_cli --source ./docs --output ./knowledge_base --no-summaries --no-articles
+
+# Use custom configuration
+python -m src.main_cli --source ./docs --output ./knowledge_base --config config.json
+```
+
+### Available CLI Arguments
+
+#### Positional Arguments
+- `source_dir`: Source directory containing markdown files (default: current directory)
+
+#### Output Options
+- `--output`, `-o`: Output directory for generated files (default: output)
+- `--config`, `-c`: Path to configuration file (JSON format)
+
+#### Processing Options
+- `--recursive`, `-r`: Process files recursively (default: True)
+- `--non-recursive`: Process files in the source directory only (no recursion)
+
+#### Output Generation Options
+- `--no-summaries`: Disable summary generation
+- `--no-articles`: Disable article generation
+- `--no-backlinks`: Disable backlink generation
+
+#### Interactive Options
+- `--no-interactive`: Disable interactive mode
+- `--verbose`, `-v`: Enable verbose output
+- `--quiet`, `-q`: Suppress all output except errors
+
+#### Model Options
+- `--model`: AI model to use for processing (default: gpt-3.5-turbo)
+- `--temperature`: Temperature for AI model (0.0-1.0, default: 0.7)
+- `--max-tokens`: Maximum tokens for AI model (default: 2000)
+
+#### File Options
+- `--max-file-size`: Maximum file size to process in bytes (default: 10MB)
+- `--file-patterns`: File patterns to match (default: *.md *.markdown)
+
+#### Analysis Options
+- `--min-confidence`: Minimum confidence threshold for concept extraction (0.0-1.0, default: 0.6)
+- `--max-concepts`: Maximum concepts to extract per document (default: 20)
+- `--no-relations`: Disable relation extraction
 
 ## Programmatic Usage
 

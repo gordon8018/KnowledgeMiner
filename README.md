@@ -20,7 +20,29 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-### Basic Usage
+### Command Line Usage
+
+```bash
+# Basic usage
+python -m src.main_cli --source ./docs --output ./knowledge_base
+
+# With verbose output
+python -m src.main_cli --source ./docs --output ./knowledge_base --verbose
+
+# Quiet mode
+python -m src.main_cli --source ./docs --output ./knowledge_base --quiet
+
+# Non-interactive mode
+python -m src.main_cli --source ./docs --output ./knowledge_base --no-interactive
+
+# Disable specific outputs
+python -m src.main_cli --source ./docs --output ./knowledge_base --no-summaries --no-articles
+
+# Use custom configuration
+python -m src.main_cli --source ./docs --output ./knowledge_base --config config.json
+```
+
+### Python API Usage
 
 ```python
 from src.main import KnowledgeCompiler
