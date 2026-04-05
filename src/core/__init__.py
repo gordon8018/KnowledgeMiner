@@ -38,6 +38,9 @@ from src.core.relation_model import (
     Relation,
 )
 
+# Import state manager (Task 8)
+from src.core.state_manager import StateManager
+
 __all__ = [
     # Base Models (Task 2)
     "BaseModel",
@@ -61,4 +64,6 @@ __all__ = [
     # Relation Model (Task 5)
     "RelationType",
     "Relation",
+    # State Manager (Task 8)
+    "StateManager",
 ]
