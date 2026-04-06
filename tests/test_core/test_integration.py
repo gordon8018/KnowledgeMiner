@@ -74,3 +74,71 @@ def test_graph_workflow(wiki_core):
     # Query graph
     related = wiki_core.get_related_concepts("A")
     assert "B" in related
+
+def test_comprehensive_multi_page_workflow(wiki_core):
+    """Test comprehensive workflow with multiple pages, updates, and graph paths."""
+    # Create multiple pages
+    wiki_core.create_page(WikiPage(
+        id="neural-network",
+        title="Neural Network",
+        content="A neural network is a network of neurons.",
+        page_type=PageType.CONCEPT
+    ))
+    wiki_core.create_page(WikiPage(
+        id="deep-learning",
+        title="Deep Learning",
+        content="Deep learning uses neural networks.",
+        page_type=PageType.TOPIC
+    ))
+    wiki_core.create_page(WikiPage(
+        id="machine-learning",
+        title="Machine Learning",
+        content="Machine learning includes deep learning.",
+        page_type=PageType.TOPIC
+    ))
+
+    # Update a page
+    updated_page = WikiPage(
+        id="neural-network",
+        title="Neural Network",
+        content="A neural network is a computational model based on biological neural networks.",
+        page_type=PageType.CONCEPT
+    )
+    wiki_core.update_page(updated_page)
+
+    # Verify update
+    retrieved = wiki_core.get_page("neural-network")
+    assert "computational model" in retrieved.content
+
+    # Add multiple relations forming a chain
+    wiki_core.add_relation(Relation(
+        id="rel-1",
+        source_concept="neural-network",
+        target_concept="deep-learning",
+        relation_type=RelationType.CONTAINED_IN,
+        strength=0.9
+    ))
+    wiki_core.add_relation(Relation(
+        id="rel-2",
+        source_concept="deep-learning",
+        target_concept="machine-learning",
+        relation_type=RelationType.CONTAINED_IN,
+        strength=0.95
+    ))
+
+    # Test search with pagination
+    results = wiki_core.search("learning", limit=2)
+    assert len(results) <= 2
+    results_ids = [r.id for r in results]
+    assert "deep-learning" in results_ids or "machine-learning" in results_ids
+
+    # Test graph path finding
+    path = wiki_core.find_shortest_path("neural-network", "machine-learning")
+    assert path is not None
+    assert len(path) >= 2
+    assert "neural-network" in path
+    assert "machine-learning" in path
+
+    # Test related concepts chain
+    related_to_nn = wiki_core.get_related_concepts("neural-network")
+    assert "deep-learning" in related_to_nn
