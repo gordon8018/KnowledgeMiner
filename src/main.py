@@ -15,6 +15,15 @@ from src.indexers.relation_mapper import RelationMapper
 from src.utils.file_ops import find_markdown_files, ensure_dir, write_file
 from src.models.document import Document, Section
 from src.models.concept import Concept, ConceptType
+from src.core.exceptions import (
+    KnowledgeCompilerError,
+    DocumentNotFoundError,
+    DocumentParseError,
+    ProcessingError,
+    ExtractionError,
+    GenerationError,
+    format_error
+)
 
 
 class KnowledgeCompiler:
@@ -167,8 +176,24 @@ class KnowledgeCompiler:
                 else:
                     self.logger.info(f"Skipped (size or pattern): {file_path}")
 
+            except DocumentNotFoundError as e:
+                # Handle document not found errors specifically
+                error_msg = f"Document not found: {file_path} - {format_error(e)}"
+                self.logger.error(error_msg)
+                results['errors'].append(error_msg)
+            except DocumentParseError as e:
+                # Handle document parsing errors specifically
+                error_msg = f"Failed to parse document: {file_path} - {format_error(e)}"
+                self.logger.error(error_msg)
+                results['errors'].append(error_msg)
+            except ProcessingError as e:
+                # Handle general processing errors
+                error_msg = f"Processing error in {file_path}: {format_error(e)}"
+                self.logger.error(error_msg)
+                results['errors'].append(error_msg)
             except Exception as e:
-                error_msg = f"Error processing {file_path}: {str(e)}"
+                # Handle unexpected errors
+                error_msg = f"Unexpected error processing {file_path}: {format_error(e)}"
                 self.logger.error(error_msg)
                 results['errors'].append(error_msg)
 
@@ -226,8 +251,15 @@ class KnowledgeCompiler:
                 if self.config.verbose_output:
                     self.logger.info(f"Extracted {len(concepts)} concepts from {document.path}")
 
+            except ExtractionError as e:
+                # Handle concept extraction errors specifically
+                self.logger.error(f"Concept extraction failed for {document.path}: {format_error(e)}")
+            except DocumentParseError as e:
+                # Handle document parsing errors that affect extraction
+                self.logger.error(f"Cannot extract concepts from unparsed document {document.path}: {format_error(e)}")
             except Exception as e:
-                self.logger.error(f"Error extracting concepts from {document.path}: {str(e)}")
+                # Handle unexpected errors during extraction
+                self.logger.error(f"Unexpected error extracting concepts from {document.path}: {format_error(e)}")
 
         self.logger.info(f"Total concepts extracted: {concept_count}")
         return concept_count
@@ -271,8 +303,15 @@ class KnowledgeCompiler:
                 if self.config.verbose_output:
                     self.logger.info(f"Generated summary for {document.path}")
 
+            except GenerationError as e:
+                # Handle content generation errors specifically
+                self.logger.error(f"Summary generation failed for {document.path}: {format_error(e)}")
+            except DocumentError as e:
+                # Handle document-related errors that affect generation
+                self.logger.error(f"Cannot generate summary for document {document.path}: {format_error(e)}")
             except Exception as e:
-                self.logger.error(f"Error generating summary for {document.path}: {str(e)}")
+                # Handle unexpected errors during generation
+                self.logger.error(f"Unexpected error generating summary for {document.path}: {format_error(e)}")
 
         self.logger.info(f"Total summaries generated: {summary_count}")
         return summary_count

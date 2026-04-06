@@ -274,6 +274,34 @@ class LLMProvider(ABC):
         """
         pass
 
+    def _validate_schema_basic(self, response_data: Dict[str, Any], schema: Dict[str, Any]) -> None:
+        """Basic schema validation when jsonschema is not available.
+
+        This method provides basic validation logic that is shared across all LLM providers.
+        It checks for required properties and validates against additionalProperties constraint.
+
+        Args:
+            response_data: Response data to validate
+            schema: JSON schema
+
+        Raises:
+            ValueError: If response doesn't match schema
+        """
+        if 'properties' in schema:
+            # Check that all required properties are present
+            required = schema.get('required', [])
+            for prop in required:
+                if prop not in response_data:
+                    raise ValueError(f"Missing required property: {prop}")
+
+            # Check that no extra properties are present if additionalProperties is False
+            if schema.get('additionalProperties', True) is False:
+                allowed_props = set(schema['properties'].keys())
+                actual_props = set(response_data.keys())
+                extra_props = actual_props - allowed_props
+                if extra_props:
+                    raise ValueError(f"Unexpected properties: {extra_props}")
+
 
 class AnthropicProvider(LLMProvider):
     """Anthropic Claude API provider."""
@@ -315,6 +343,10 @@ class AnthropicProvider(LLMProvider):
             rate_limit_period=rate_limit_period
         )
 
+        # Create API client once for reuse
+        self._ensure_client()
+        self.client = anthropic.Anthropic(api_key=self.api_key)
+
     def _ensure_client(self):
         """Ensure anthropic package is available."""
         if anthropic is None:
@@ -352,13 +384,12 @@ class AnthropicProvider(LLMProvider):
             timeout=self.timeout
         )
         def _make_request():
-            client = anthropic.Anthropic(api_key=self.api_key)
-
+            # Use the pre-initialized client
             # Use override values if provided, otherwise use instance defaults
             tokens = max_tokens if max_tokens is not None else self.max_tokens
             temp = temperature if temperature is not None else self.temperature
 
-            response = client.messages.create(
+            response = self.client.messages.create(
                 model=self.model,
                 max_tokens=tokens,
                 temperature=temp,
@@ -422,31 +453,6 @@ class AnthropicProvider(LLMProvider):
 
         return response_data
 
-    def _validate_schema_basic(self, response_data: Dict[str, Any], schema: Dict[str, Any]) -> None:
-        """Basic schema validation when jsonschema is not available.
-
-        Args:
-            response_data: Response data to validate
-            schema: JSON schema
-
-        Raises:
-            ValueError: If response doesn't match schema
-        """
-        if 'properties' in schema:
-            # Check that all required properties are present
-            required = schema.get('required', [])
-            for prop in required:
-                if prop not in response_data:
-                    raise ValueError(f"Missing required property: {prop}")
-
-            # Check that no extra properties are present if additionalProperties is False
-            if schema.get('additionalProperties', True) is False:
-                allowed_props = set(schema['properties'].keys())
-                actual_props = set(response_data.keys())
-                extra_props = actual_props - allowed_props
-                if extra_props:
-                    raise ValueError(f"Unexpected properties: {extra_props}")
-
 
 class OpenAIProvider(LLMProvider):
     """OpenAI GPT API provider."""
@@ -488,6 +494,10 @@ class OpenAIProvider(LLMProvider):
             rate_limit_period=rate_limit_period
         )
 
+        # Create API client once for reuse
+        self._ensure_client()
+        self.client = openai.OpenAI(api_key=self.api_key)
+
     def _ensure_client(self):
         """Ensure openai package is available."""
         if openai is None:
@@ -525,13 +535,12 @@ class OpenAIProvider(LLMProvider):
             timeout=self.timeout
         )
         def _make_request():
-            client = openai.OpenAI(api_key=self.api_key)
-
+            # Use the pre-initialized client
             # Use override values if provided, otherwise use instance defaults
             tokens = max_tokens if max_tokens is not None else self.max_tokens
             temp = temperature if temperature is not None else self.temperature
 
-            response = client.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
@@ -594,31 +603,6 @@ class OpenAIProvider(LLMProvider):
             self._validate_schema_basic(response_data, schema)
 
         return response_data
-
-    def _validate_schema_basic(self, response_data: Dict[str, Any], schema: Dict[str, Any]) -> None:
-        """Basic schema validation when jsonschema is not available.
-
-        Args:
-            response_data: Response data to validate
-            schema: JSON schema
-
-        Raises:
-            ValueError: If response doesn't match schema
-        """
-        if 'properties' in schema:
-            # Check that all required properties are present
-            required = schema.get('required', [])
-            for prop in required:
-                if prop not in response_data:
-                    raise ValueError(f"Missing required property: {prop}")
-
-            # Check that no extra properties are present if additionalProperties is False
-            if schema.get('additionalProperties', True) is False:
-                allowed_props = set(schema['properties'].keys())
-                actual_props = set(response_data.keys())
-                extra_props = actual_props - allowed_props
-                if extra_props:
-                    raise ValueError(f"Unexpected properties: {extra_props}")
 
 
 def get_llm_provider(

@@ -5,6 +5,25 @@ from src.models.document import Document
 class CategoryIndexer:
     """Indexes and categorizes documents by tags and custom categories."""
 
+    # Class-level constant for extension mapping
+    EXTENSION_MAPPING = {
+        'py': 'python',
+        'js': 'javascript',
+        'ts': 'typescript',
+        'cpp': 'cpp',
+        'c': 'c',
+        'html': 'html',
+        'css': 'css',
+        'md': 'markdown',
+        'yml': 'yaml',
+        'yaml': 'yaml',
+        'json': 'json',
+        'xml': 'xml',
+        'sql': 'sql',
+        'tf': 'terraform',
+        'sh': 'shell',
+    }
+
     TYPE_TO_CATEGORY = {
         'python': 'programming',
         'javascript': 'programming',
@@ -185,27 +204,8 @@ class CategoryIndexer:
         """
         # Normalize extension (remove leading dot if present)
         normalized = file_extension.lstrip('.')
-        # Common mappings for file extensions that differ from their type names
-        extension_mapping = {
-            'py': 'python',
-            'js': 'javascript',
-            'ts': 'typescript',
-            'cpp': 'cpp',
-            'c': 'c',
-            'html': 'html',
-            'css': 'css',
-            'md': 'markdown',
-            'yml': 'yaml',
-            'yaml': 'yaml',
-            'json': 'json',
-            'xml': 'xml',
-            'sql': 'sql',
-            'tf': 'terraform',
-            'sh': 'shell',
-            'tf': 'terraform'
-        }
-        # Use mapped extension if available, otherwise use original
-        mapped_extension = extension_mapping.get(normalized, normalized)
+        # Use class-level extension mapping
+        mapped_extension = self.EXTENSION_MAPPING.get(normalized, normalized)
         return self.TYPE_TO_CATEGORY.get(mapped_extension, 'unknown')
 
     def categorize_by_file_extension(self, document: Document) -> str:
@@ -221,27 +221,8 @@ class CategoryIndexer:
         path_parts = document.path.split('.')
         if len(path_parts) > 1:
             extension = path_parts[-1]
-            # Common mappings for file extensions that differ from their type names
-            extension_mapping = {
-                'py': 'python',
-                'js': 'javascript',
-                'ts': 'typescript',
-                'cpp': 'cpp',
-                'c': 'c',
-                'html': 'html',
-                'css': 'css',
-                'md': 'markdown',
-                'yml': 'yaml',
-                'yaml': 'yaml',
-                'json': 'json',
-                'xml': 'xml',
-                'sql': 'sql',
-                'tf': 'terraform',
-                'sh': 'shell',
-                'tf': 'terraform'
-            }
-            # Use mapped extension if available, otherwise use original
-            mapped_extension = extension_mapping.get(extension, extension)
+            # Use class-level extension mapping
+            mapped_extension = self.EXTENSION_MAPPING.get(extension, extension)
             return self.get_category_from_file_extension(mapped_extension)
         return 'unknown'
 

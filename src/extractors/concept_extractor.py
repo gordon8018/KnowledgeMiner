@@ -171,17 +171,6 @@ class ConceptExtractor:
                 if example_dict not in concept.applications:
                     concept.applications.append(example_dict)
 
-    def _process_line(self, line: str, full_content: str):
-        """
-        Process a single line of content.
-
-        Args:
-            line: The line to process
-            full_content: The full content for pattern matching
-        """
-        # Keep this for backward compatibility if needed
-        pass
-
     def get_concepts_by_category(self, category: str) -> List[Concept]:
         """
         Get all concepts belonging to a specific category.
