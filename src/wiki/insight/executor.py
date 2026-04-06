@@ -6,8 +6,10 @@ into Wiki pages by updating content and creating version records.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+import time
+from typing import List, Dict, Any, Optional, Callable
 from datetime import datetime
+from functools import wraps
 
 from src.wiki.core.models import WikiPage, WikiVersion, PageType
 from src.wiki.core.storage import WikiStore
@@ -15,6 +17,52 @@ from src.discovery.models.insight import Insight
 
 
 logger = logging.getLogger(__name__)
+
+
+def retry_with_exponential_backoff(
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+    max_delay: float = 10.0
+) -> Callable:
+    """
+    Decorator for retrying functions with exponential backoff.
+
+    Args:
+        max_attempts: Maximum number of retry attempts
+        base_delay: Base delay in seconds
+        max_delay: Maximum delay in seconds
+
+    Returns:
+        Decorated function with retry logic
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            delay = base_delay
+
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_attempts - 1:
+                        logger.warning(
+                            f"Attempt {attempt + 1}/{max_attempts} failed for {func.__name__}: {e}. "
+                            f"Retrying in {delay:.1f}s..."
+                        )
+                        time.sleep(delay)
+                        delay = min(delay * 2, max_delay)  # Exponential backoff
+                    else:
+                        logger.error(
+                            f"All {max_attempts} attempts failed for {func.__name__}: {e}"
+                        )
+
+            # If we get here, all attempts failed
+            raise last_exception
+
+        return wrapper
+    return decorator
 
 
 class BackfillExecutor:
@@ -93,36 +141,47 @@ class BackfillExecutor:
             Updated WikiPage with incremented version
 
         Raises:
-            Exception: If LLM generation fails
+            Exception: If LLM generation fails after all retry attempts
         """
         # Generate update prompt for LLM
         prompt = self._create_update_prompt(page, insight)
 
-        try:
-            # Use LLM to generate updated content
-            updated_content = self.llm_provider.generate(prompt)
+        # Use LLM to generate updated content with retry logic
+        updated_content = self._generate_content_with_retry(prompt)
 
-            # Create updated page object
-            updated_page = WikiPage(
-                id=page.id,
-                title=page.title,
-                content=updated_content,
-                page_type=page.page_type,
-                version=page.version,
-                metadata=page.metadata.copy(),
-                created_at=page.created_at,
-                updated_at=datetime.now()
-            )
+        # Create updated page object
+        updated_page = WikiPage(
+            id=page.id,
+            title=page.title,
+            content=updated_content,
+            page_type=page.page_type,
+            version=page.version,
+            metadata=page.metadata.copy(),
+            created_at=page.created_at,
+            updated_at=datetime.now()
+        )
 
-            # Increment version
-            updated_page.increment_version()
+        # Increment version
+        updated_page.increment_version()
 
-            logger.info(f"Generated content update for page {page.id} using insight {insight.id}")
-            return updated_page
+        logger.info(f"Generated content update for page {page.id} using insight {insight.id}")
+        return updated_page
 
-        except Exception as e:
-            logger.error(f"Failed to generate content update for page {page.id}: {e}")
-            raise
+    @retry_with_exponential_backoff(max_attempts=3, base_delay=1.0, max_delay=10.0)
+    def _generate_content_with_retry(self, prompt: str) -> str:
+        """
+        Generate content using LLM with retry logic.
+
+        Args:
+            prompt: Prompt for LLM
+
+        Returns:
+            Generated content
+
+        Raises:
+            Exception: If LLM generation fails after all retry attempts
+        """
+        return self.llm_provider.generate(prompt)
 
     def _create_update_prompt(self, page: WikiPage, insight: Insight) -> str:
         """
@@ -218,6 +277,9 @@ class BackfillExecutor:
         3. Create version records for all changes
         4. Persist updates to WikiStore
 
+        Transaction support: All page updates are collected first, then
+        applied atomically. If any update fails, all changes are rolled back.
+
         Args:
             insight: Insight to backfill into Wiki
 
@@ -225,7 +287,7 @@ class BackfillExecutor:
             List of updated page IDs
 
         Raises:
-            Exception: If any page update fails
+            Exception: If any page update fails (with rollback)
         """
         if not insight.related_concepts:
             logger.info(f"Insight {insight.id} has no related concepts, skipping backfill")
@@ -238,11 +300,15 @@ class BackfillExecutor:
             logger.info(f"No target pages found for insight {insight.id}")
             return []
 
-        updated_page_ids = []
+        # Phase 1: Collect all updates (prepare phase)
+        updates = []
+        original_pages = {}  # Store original pages for rollback
 
-        # Update each target page
-        for page in target_pages:
-            try:
+        try:
+            for page in target_pages:
+                # Store original page for potential rollback
+                original_pages[page.id] = page
+
                 # Generate updated content
                 updated_page = self.update_page_content(page, insight)
 
@@ -254,22 +320,74 @@ class BackfillExecutor:
                     metadata={"insight_id": insight.id}
                 )
 
-                # Persist update to WikiStore
-                self.wiki_store.update_page(updated_page)
+                # Collect update
+                updates.append({
+                    "page": updated_page,
+                    "original_page": page,
+                    "version": version
+                })
 
-                updated_page_ids.append(updated_page.id)
-                logger.info(f"Successfully backfilled insight {insight.id} to page {updated_page.id}")
+                logger.debug(f"Prepared update for page {page.id} (insight {insight.id})")
 
-            except Exception as e:
-                logger.error(f"Failed to backfill insight {insight.id} to page {page.id}: {e}")
-                raise
+            # Phase 2: Apply all updates atomically (commit phase)
+            updated_page_ids = []
 
-        logger.info(
-            f"Completed backfill for insight {insight.id}, "
-            f"updated {len(updated_page_ids)} pages"
-        )
+            for update in updates:
+                try:
+                    # Persist update to WikiStore
+                    self.wiki_store.update_page(update["page"])
+                    updated_page_ids.append(update["page"].id)
+                    logger.info(
+                        f"Successfully backfilled insight {insight.id} to page {update['page'].id}"
+                    )
 
-        return updated_page_ids
+                except Exception as e:
+                    # Transaction failed: attempt rollback
+                    logger.error(
+                        f"Failed to persist update for page {update['page'].id}: {e}. "
+                        f"Attempting rollback..."
+                    )
+                    self._rollback_updates(updates, updated_page_ids)
+                    raise
+
+            logger.info(
+                f"Completed backfill for insight {insight.id}, "
+                f"updated {len(updated_page_ids)} pages"
+            )
+
+            return updated_page_ids
+
+        except Exception as e:
+            # Error in prepare phase: no partial updates applied
+            logger.error(
+                f"Failed to prepare backfill for insight {insight.id}: {e}. "
+                f"No updates were applied."
+            )
+            raise
+
+    def _rollback_updates(self, updates: List[Dict[str, Any]], committed_page_ids: List[str]) -> None:
+        """
+        Rollback updates for pages that were already committed.
+
+        Args:
+            updates: List of prepared updates
+            committed_page_ids: List of page IDs that were successfully committed
+        """
+        logger.warning(f"Rolling back {len(committed_page_ids)} committed updates...")
+
+        for update in updates:
+            if update["page"].id in committed_page_ids:
+                try:
+                    # Restore original page
+                    self.wiki_store.update_page(update["original_page"])
+                    logger.debug(f"Rolled back page {update['page'].id}")
+                except Exception as rollback_error:
+                    logger.error(
+                        f"Failed to rollback page {update['page'].id}: {rollback_error}. "
+                        f"Manual intervention may be required."
+                    )
+
+        logger.warning("Rollback completed")
 
     def set_author(self, author: str) -> None:
         """

@@ -117,24 +117,6 @@ class InsightReceiver:
 
         return result
 
-    def _priority_level_rank(self, level: PriorityLevel) -> int:
-        """
-        Get numeric rank for priority level (lower is higher priority).
-
-        Args:
-            level: PriorityLevel enum
-
-        Returns:
-            Integer rank (0 for P0, 1 for P1, etc.)
-        """
-        ranks = {
-            PriorityLevel.P0_IMMEDIATE: 0,
-            PriorityLevel.P1_PRIORITY: 1,
-            PriorityLevel.P2_STANDARD: 2,
-            PriorityLevel.P3_DEFERRED: 3
-        }
-        return ranks.get(level, 99)
-
     def clear_pending(self) -> None:
         """
         Clear all pending insights.

@@ -39,18 +39,24 @@ def mock_wiki_store():
     # Mock pages database
     pages = {}
 
-    def get_page(page_id: str) -> WikiPage:
+    def get_page(page_id: str):
         return pages.get(page_id)
 
-    def save_page(page: WikiPage) -> None:
+    def create_page(page: WikiPage) -> WikiPage:
+        if page.id in pages:
+            raise ValueError(f"Page {page.id} already exists")
         pages[page.id] = page
+        return page
 
-    def page_exists(page_id: str) -> bool:
-        return page_id in pages
+    def update_page(page: WikiPage) -> WikiPage:
+        if page.id not in pages:
+            raise ValueError(f"Page {page.id} does not exist")
+        pages[page.id] = page
+        return page
 
     store.get_page = get_page
-    store.save_page = save_page
-    store.page_exists = page_exists
+    store.create_page = create_page
+    store.update_page = update_page
 
     # Track pages for debugging
     store._pages = pages
@@ -112,7 +118,7 @@ def sample_wiki_pages(mock_wiki_store):
         version=1
     )
     pages.append(page1)
-    mock_wiki_store.save_page(page1)
+    mock_wiki_store.create_page(page1)
 
     page2 = WikiPage(
         id="concept2",
@@ -122,7 +128,7 @@ def sample_wiki_pages(mock_wiki_store):
         version=1
     )
     pages.append(page2)
-    mock_wiki_store.save_page(page2)
+    mock_wiki_store.create_page(page2)
 
     page3 = WikiPage(
         id="concept3",
@@ -132,7 +138,7 @@ def sample_wiki_pages(mock_wiki_store):
         version=1
     )
     pages.append(page3)
-    mock_wiki_store.save_page(page3)
+    mock_wiki_store.create_page(page3)
 
     return pages
 
@@ -869,7 +875,7 @@ class TestPerformance:
                 page_type=PageType.CONCEPT,
                 version=1
             )
-            mock_wiki_store.save_page(page)
+            mock_wiki_store.create_page(page)
 
         # Create insight affecting many pages
         insight = Insight(
