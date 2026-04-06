@@ -202,9 +202,23 @@ class KnowledgeCompiler:
                 for concept in concepts:
                     self.relation_mapper.add_concept(concept)
 
-                    # Add candidate concepts for tracking
-                    for candidate in concepts:
+                # Add all concepts as candidate concepts for tracking
+                for candidate in concepts:
+                    # Convert Concept to CandidateConcept if needed
+                    from src.models.concept import CandidateConcept
+                    if isinstance(candidate, CandidateConcept):
                         self.relation_mapper.add_candidate_concept(candidate)
+                    else:
+                        # Create CandidateConcept from Concept
+                        candidate_concept = CandidateConcept(
+                            name=candidate.name,
+                            type=candidate.type,
+                            confidence=0.8,  # Default confidence
+                            context=candidate.definition[:200] if candidate.definition else "",
+                            source_section="extracted",
+                            source_file=document.path if hasattr(document, 'path') else "unknown"
+                        )
+                        self.relation_mapper.add_candidate_concept(candidate_concept)
 
                 self.extracted_concepts.extend(concepts)
                 concept_count += len(concepts)

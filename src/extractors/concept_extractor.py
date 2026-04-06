@@ -4,7 +4,8 @@ Concept extractor for extracting knowledge concepts from markdown content.
 
 import re
 from typing import List, Dict, Optional
-from src.models.concept import Concept, ConceptType
+from src.models.concept import Concept
+from src.core.concept_model import ConceptType
 from src.extractors.patterns import ExtractionPatterns
 
 

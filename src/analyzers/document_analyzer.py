@@ -1,7 +1,7 @@
 import os
 from typing import List
 from src.models.document import Document, Section
-from src.models.concept import ConceptType
+from src.core.concept_model import ConceptType
 from src.analyzers.hash_calculator import calculate_file_hash
 from src.utils.markdown_utils import parse_frontmatter, parse_sections
 

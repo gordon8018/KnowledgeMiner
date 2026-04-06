@@ -1,13 +1,7 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import List, Dict
-
-class ConceptType(Enum):
-    TERM = "term"
-    INDICATOR = "indicator"
-    STRATEGY = "strategy"
-    THEORY = "theory"
-    PERSON = "person"
+# Import ConceptType from core to avoid duplication
+from src.core.concept_model import ConceptType
 
 @dataclass
 class CandidateConcept:
