@@ -1,0 +1,101 @@
+{
+  "flags": [
+    {
+      "name": "test_flag",
+      "description": "Test flag",
+      "enabled": false,
+      "rollout_percentage": 0.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {},
+      "created_at": "2026-04-06T10:44:59.520268",
+      "updated_at": "2026-04-06T10:44:59.520270"
+    },
+    {
+      "name": "flag1",
+      "description": "Test 1",
+      "enabled": false,
+      "rollout_percentage": 0.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {},
+      "created_at": "2026-04-06T10:44:59.541487",
+      "updated_at": "2026-04-06T10:44:59.541490"
+    },
+    {
+      "name": "flag2",
+      "description": "Test 2",
+      "enabled": false,
+      "rollout_percentage": 0.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {},
+      "created_at": "2026-04-06T10:44:59.541985",
+      "updated_at": "2026-04-06T10:44:59.541987"
+    },
+    {
+      "name": "ab_test_test_experiment",
+      "description": "A/B Test: Test experiment",
+      "enabled": true,
+      "rollout_percentage": 100.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {
+        "experiment_name": "test_experiment",
+        "variants": [
+          "control",
+          "treatment"
+        ],
+        "traffic_split": [
+          50.0,
+          50.0
+        ]
+      },
+      "created_at": "2026-04-06T10:44:59.547621",
+      "updated_at": "2026-04-06T10:44:59.547623"
+    },
+    {
+      "name": "experimental_extraction",
+      "description": "Experimental extraction algorithm",
+      "enabled": true,
+      "rollout_percentage": 10.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {},
+      "created_at": "2026-04-06T10:44:59.570244",
+      "updated_at": "2026-04-06T10:44:59.570247"
+    },
+    {
+      "name": "ab_test_extraction_algorithm",
+      "description": "A/B Test: Test new extraction algorithm",
+      "enabled": true,
+      "rollout_percentage": 100.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {
+        "experiment_name": "extraction_algorithm",
+        "variants": [
+          "standard",
+          "experimental"
+        ],
+        "traffic_split": [
+          80.0,
+          20.0
+        ]
+      },
+      "created_at": "2026-04-06T10:44:59.571625",
+      "updated_at": "2026-04-06T10:44:59.571627"
+    },
+    {
+      "name": "new_feature",
+      "description": "New feature",
+      "enabled": false,
+      "rollout_percentage": 100.0,
+      "whitelist": [],
+      "blacklist": [],
+      "metadata": {},
+      "created_at": "2026-04-06T10:44:59.573074",
+      "updated_at": "2026-04-06T10:44:59.575684"
+    }
+  ]
+}

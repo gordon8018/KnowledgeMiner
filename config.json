@@ -1,0 +1,28 @@
+{
+  "source_dir": "E:\\OneDrive\\obsidian_vault\\gordon8018\\投资交易",
+  "target_dir": "E:\\OneDrive\\obsidian_vault\\gordon8018\\wiki\\投资交易",
+  "categories": [
+    "技术指标",
+    "战法",
+    "心理学",
+    "理论",
+    "人物",
+    "市场结构"
+  ],
+  "extraction": {
+    "min_confidence": 0.7,
+    "term_patterns": [
+      "「.*?」",
+      "\\*\\*.*?\\*\\*"
+    ],
+    "indicator_patterns": [
+      "\\$[A-Za-z_]+\\$",
+      "[A-Za-z_]+_ratio",
+      "[A-Za-z_]+_factor"
+    ]
+  },
+  "templates": {
+    "concept_article": "templates/concept_article.md",
+    "summary": "templates/summary.md"
+  }
+}

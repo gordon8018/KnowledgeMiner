@@ -1,0 +1,16 @@
+# config/development.yaml
+knowledge_compiler:
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-6"
+    temperature: 0.3
+    max_tokens: 4096
+
+  storage:
+    database_url: "sqlite:///./dev_knowledge.db"
+
+  processing:
+    parallel_workers: 2  # Reduce for development
+
+  logging:
+    level: "DEBUG"
