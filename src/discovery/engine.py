@@ -13,7 +13,7 @@ from src.discovery.insight_generator import InsightGenerator
 from src.core.document_model import EnhancedDocument
 from src.core.concept_model import EnhancedConcept
 from src.core.relation_model import Relation
-from src.integrations.llm_providers import LLMProvider
+from src.integrations.llm_providers import LLMProvider, get_llm_provider
 from src.ml.embeddings import EmbeddingGenerator
 
 
@@ -41,7 +41,7 @@ class KnowledgeDiscoveryEngine:
             embedding_generator: Embedding generator (created if None)
         """
         self.config = config
-        self.llm = llm_provider or LLMProvider()
+        self.llm = llm_provider or get_llm_provider()
         self.embedder = embedding_generator or EmbeddingGenerator()
 
         # Initialize components

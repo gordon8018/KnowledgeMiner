@@ -305,30 +305,40 @@ class KnowledgeCompiler:
         """
         self.logger.info("Generating concept backlinks")
 
-        backlink_count = 0
-        for concept in self.extracted_concepts:
-            try:
-                backlinks = self.backlink_generator.generate_backlinks(
-                    concept, self.extracted_concepts
-                )
+        # Generate all backlinks at once
+        try:
+            all_backlinks = self.backlink_generator.generate_backlinks(self.extracted_concepts)
 
-                if backlinks:
-                    # Save backlinks
-                    backlink_path = os.path.join(
-                        self.config.output_dir,
-                        f"backlinks_{concept.name.lower().replace(' ', '_')}.md"
-                    )
-                    ensure_dir(os.path.dirname(backlink_path))
-                    write_file(backlink_path, backlinks)
+            backlink_count = 0
+            for concept in self.extracted_concepts:
+                try:
+                    backlinks = all_backlinks.get(concept.name, [])
 
-                    self.generated_backlinks.append(backlink_path)
-                    backlink_count += 1
+                    if backlinks:
+                        # Save backlinks for this concept
+                        backlink_path = os.path.join(
+                            self.config.output_dir,
+                            f"backlinks_{concept.name.lower().replace(' ', '_')}.md"
+                        )
+                        ensure_dir(os.path.dirname(backlink_path))
 
-                    if self.config.verbose_output:
-                        self.logger.info(f"Generated backlinks for concept: {concept.name}")
+                        # Format backlinks as markdown
+                        backlink_content = f"# Backlinks for {concept.name}\n\n"
+                        for backlink in backlinks:
+                            backlink_content += f"- {backlink}\n"
 
-            except Exception as e:
-                self.logger.error(f"Error generating backlinks for {concept.name}: {str(e)}")
+                        write_file(backlink_path, backlink_content)
+                        self.generated_backlinks.append(backlink_path)
+                        backlink_count += 1
+
+                        if self.config.verbose_output:
+                            self.logger.info(f"Generated backlinks for concept: {concept.name}")
+
+                except Exception as e:
+                    self.logger.error(f"Error saving backlinks for {concept.name}: {str(e)}")
+
+        except Exception as e:
+            self.logger.error(f"Error generating backlinks: {str(e)}")
 
         self.logger.info(f"Total backlinks generated: {backlink_count}")
         return backlink_count
@@ -636,17 +646,32 @@ Processed {stats['documents']['total']} documents and extracted {stats['concepts
                             self.generated_articles.append(article_path)
 
                 if self.config.generate_backlinks:
+                    # Generate all backlinks at once
+                    all_backlinks = self.backlink_generator.generate_backlinks(confirmed_concepts)
+
                     self.generated_backlinks = []
                     for concept in confirmed_concepts:
-                        backlinks = self.backlink_generator.generate_backlinks(concept, confirmed_concepts)
-                        if backlinks:
-                            backlink_path = os.path.join(
-                                self.config.output_dir,
-                                f"backlinks_{concept.name.lower().replace(' ', '_')}.md"
-                            )
-                            ensure_dir(os.path.dirname(backlink_path))
-                            write_file(backlink_path, backlinks)
-                            self.generated_backlinks.append(backlink_path)
+                        try:
+                            backlinks = all_backlinks.get(concept.name, [])
+
+                            if backlinks:
+                                # Save backlinks for this concept
+                                backlink_path = os.path.join(
+                                    self.config.output_dir,
+                                    f"backlinks_{concept.name.lower().replace(' ', '_')}.md"
+                                )
+                                ensure_dir(os.path.dirname(backlink_path))
+
+                                # Format backlinks as markdown
+                                backlink_content = f"# Backlinks for {concept.name}\n\n"
+                                for backlink in backlinks:
+                                    backlink_content += f"- {backlink}\n"
+
+                                write_file(backlink_path, backlink_content)
+                                self.generated_backlinks.append(backlink_path)
+
+                        except Exception as e:
+                            self.logger.error(f"Error saving backlinks for {concept.name}: {str(e)}")
 
                 results['confirmed_concepts'] = len(confirmed_concepts)
                 results['filtered_concepts'] = len(self.extracted_concepts) - len(confirmed_concepts)

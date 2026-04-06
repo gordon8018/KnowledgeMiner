@@ -285,7 +285,7 @@ Then provide a JSON block:
 """
 
             # Call LLM
-            response = self.llm_provider.generate_response(
+            response = self.llm_provider.generate(
                 prompt=prompt,
                 max_tokens=1000,
                 temperature=0.7

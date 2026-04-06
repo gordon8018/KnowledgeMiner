@@ -191,7 +191,7 @@ class ConceptExtractor:
         Returns:
             List of concepts in the specified category
         """
-        return [concept for concept in self.concepts if concept.category == category]
+        return [concept for concept in self.concepts if concept.criteria == category]
 
     def get_concepts_by_relation(self, relation: str) -> List[Concept]:
         """
@@ -204,7 +204,7 @@ class ConceptExtractor:
             List of concepts with the specified relation
         """
         return [concept for concept in self.concepts
-                if concept.related and relation.lower() in concept.related]
+                if concept.related_concepts and relation.lower() in str(concept.related_concepts)]
 
     def clear_concepts(self):
         """

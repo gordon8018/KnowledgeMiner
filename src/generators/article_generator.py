@@ -30,12 +30,13 @@ class ArticleGenerator:
 
         self.articles: List[str] = []
 
-    def generate_article(self, concept: Concept) -> str:
+    def generate_article(self, concept: Concept, all_concepts: List[Concept] = None) -> str:
         """
         Generate an article for a single concept.
 
         Args:
             concept: The concept to generate an article for
+            all_concepts: List of all concepts for reference (optional)
 
         Returns:
             Formatted article content
