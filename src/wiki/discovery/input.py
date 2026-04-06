@@ -10,6 +10,7 @@ import json
 import hashlib
 import tempfile
 import logging
+import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
@@ -32,6 +33,9 @@ class InputProcessor:
     - Automatic cleanup of corrupted state files
     - Impact score calculation (0-1 scale)
     """
+
+    # Class constant for impact score normalization
+    MAX_IMPACT_CHANGES = 100
 
     def __init__(self, input_dir: str, state_file: str):
         """
@@ -138,7 +142,7 @@ class InputProcessor:
         logger.debug(f"Scanned {len(documents)} documents")
         return documents
 
-    def _calculate_hash(self, file_path: str) -> str:
+    def _calculate_hash(self, file_path: str) -> Optional[str]:
         """
         Calculate MD5 hash of file content.
 
@@ -146,7 +150,7 @@ class InputProcessor:
             file_path: Path to file
 
         Returns:
-            MD5 hash as hexadecimal string
+            MD5 hash as hexadecimal string, or None if file cannot be read
         """
         md5_hash = hashlib.md5()
 
@@ -157,7 +161,7 @@ class InputProcessor:
                     md5_hash.update(chunk)
         except IOError as e:
             logger.error(f"Error reading file {file_path}: {e}")
-            return ""
+            return None
 
         return md5_hash.hexdigest()
 
@@ -221,8 +225,8 @@ class InputProcessor:
         """
         total_changes = new_count + changed_count + deleted_count
 
-        # Normalize: 100 changes = 1.0 impact
-        impact = min(total_changes / 100.0, 1.0)
+        # Normalize: MAX_IMPACT_CHANGES changes = 1.0 impact
+        impact = min(total_changes / self.MAX_IMPACT_CHANGES, 1.0)
 
         logger.debug(f"Impact score: {impact:.2f} (based on {total_changes} changes)")
         return impact
@@ -291,7 +295,3 @@ class InputProcessor:
 
             logger.error(f"Error saving state: {e}")
             raise
-
-
-# Import shutil for backup functionality
-import shutil
