@@ -59,10 +59,39 @@ class GapAnalyzer:
         self,
         documents: List[Dict[str, Any]],
         concepts: List[EnhancedConcept],
-        relations: List[Relation]
+        relations: List[Relation],
+        mode: str = 'full'
     ) -> List[KnowledgeGap]:
         """
         Analyze knowledge gaps across all dimensions.
+
+        Args:
+            documents: List of documents (dicts with 'id', 'title', 'content')
+            concepts: List of EnhancedConcept objects
+            relations: List of Relation objects
+            mode: Processing mode ('full', 'incremental', 'hybrid')
+
+        Returns:
+            List of KnowledgeGap objects sorted by priority (high to low)
+        """
+        # Route to appropriate implementation based on mode
+        if mode == 'full':
+            return self._analyze_full(documents, concepts, relations)
+        elif mode == 'incremental':
+            return self._analyze_incremental(documents, concepts, relations)
+        elif mode == 'hybrid':
+            return self._analyze_hybrid(documents, concepts, relations)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    def _analyze_full(
+        self,
+        documents: List[Dict[str, Any]],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[KnowledgeGap]:
+        """
+        Analyze knowledge gaps in full mode (process all documents, concepts, and relations).
 
         Args:
             documents: List of documents (dicts with 'id', 'title', 'content')
@@ -102,6 +131,91 @@ class GapAnalyzer:
         all_gaps.sort(key=lambda g: g.priority, reverse=True)
 
         return all_gaps
+
+    def _analyze_incremental(
+        self,
+        documents: List[Dict[str, Any]],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[KnowledgeGap]:
+        """
+        Analyze knowledge gaps in incremental mode (process only provided documents/concepts).
+
+        In incremental mode, we only analyze gaps from the provided documents/concepts.
+        This is useful when processing new/changed documents.
+
+        Args:
+            documents: List of documents (dicts with 'id', 'title', 'content')
+            concepts: List of EnhancedConcept objects (new/changed only)
+            relations: List of Relation objects
+
+        Returns:
+            List of KnowledgeGap objects sorted by priority (high to low)
+        """
+        # In incremental mode, we process the provided documents/concepts
+        # This is the same as full mode but with the assumption that
+        # only new/changed documents/concepts are provided
+        all_gaps = []
+
+        # 1. Analyze missing concepts (limited to provided concepts)
+        if self.config.enable_concept_gap_analysis:
+            try:
+                concept_gaps = self._analyze_missing_concepts(concepts, documents)
+                all_gaps.extend(concept_gaps)
+            except Exception as e:
+                logger.error(f"Error analyzing missing concepts: {e}")
+
+        # 2. Analyze missing relations (limited to provided concepts)
+        if self.config.enable_relation_gap_analysis:
+            try:
+                relation_gaps = self._analyze_missing_relations(concepts, relations)
+                all_gaps.extend(relation_gaps)
+            except Exception as e:
+                logger.error(f"Error analyzing missing relations: {e}")
+
+        # 3. Analyze insufficient evidence (limited to provided concepts)
+        if self.config.enable_evidence_analysis:
+            try:
+                evidence_gaps = self._analyze_insufficient_evidence(concepts)
+                all_gaps.extend(evidence_gaps)
+            except Exception as e:
+                logger.error(f"Error analyzing insufficient evidence: {e}")
+
+        # Sort by priority (high to low)
+        all_gaps.sort(key=lambda g: g.priority, reverse=True)
+
+        return all_gaps
+
+    def _analyze_hybrid(
+        self,
+        documents: List[Dict[str, Any]],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[KnowledgeGap]:
+        """
+        Analyze knowledge gaps in hybrid mode (smart selection based on concept count).
+
+        Hybrid mode uses a threshold heuristic:
+        - If concepts < 10: process all (like full mode)
+        - If concepts >= 10: process all (like full mode for now)
+
+        Args:
+            documents: List of documents (dicts with 'id', 'title', 'content')
+            concepts: List of EnhancedConcept objects
+            relations: List of Relation objects
+
+        Returns:
+            List of KnowledgeGap objects sorted by priority (high to low)
+        """
+        # Threshold for hybrid mode
+        threshold = 10
+
+        if len(concepts) < threshold:
+            logger.info(f"Hybrid mode: {len(concepts)} concepts < {threshold} threshold, processing all")
+            return self._analyze_full(documents, concepts, relations)
+        else:
+            logger.info(f"Hybrid mode: {len(concepts)} concepts >= {threshold} threshold, processing all")
+            return self._analyze_full(documents, concepts, relations)
 
     def _analyze_missing_concepts(
         self,

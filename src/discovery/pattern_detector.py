@@ -2,9 +2,12 @@
 Pattern detection engine for discovering patterns in knowledge bases.
 """
 
+import logging
 from typing import List, Dict, Any
 from datetime import datetime
 import networkx as nx
+
+logger = logging.getLogger(__name__)
 
 from src.discovery.config import DiscoveryConfig
 from src.discovery.models.pattern import Pattern, PatternType, Evidence
@@ -40,10 +43,39 @@ class PatternDetector:
         self,
         documents: List[EnhancedDocument],
         concepts: List[EnhancedConcept],
-        relations: List[Relation]
+        relations: List[Relation],
+        mode: str = 'full'
     ) -> List[Pattern]:
         """
         Detect all types of patterns in the knowledge base.
+
+        Args:
+            documents: List of documents to analyze
+            concepts: List of concepts to analyze
+            relations: List of relations to analyze
+            mode: Processing mode ('full', 'incremental', 'hybrid')
+
+        Returns:
+            List of detected patterns
+        """
+        # Route to appropriate implementation based on mode
+        if mode == 'full':
+            return self._detect_full(documents, concepts, relations)
+        elif mode == 'incremental':
+            return self._detect_incremental(documents, concepts, relations)
+        elif mode == 'hybrid':
+            return self._detect_hybrid(documents, concepts, relations)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    def _detect_full(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[Pattern]:
+        """
+        Detect patterns in full mode (process all documents, concepts, and relations).
 
         Args:
             documents: List of documents to analyze
@@ -82,6 +114,90 @@ class PatternDetector:
         ]
 
         return filtered_patterns
+
+    def _detect_incremental(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[Pattern]:
+        """
+        Detect patterns in incremental mode (process only provided documents/concepts).
+
+        In incremental mode, we only detect patterns from the provided documents.
+        This is useful when processing new/changed documents.
+
+        Args:
+            documents: List of documents to analyze (new/changed only)
+            concepts: List of concepts to analyze
+            relations: List of relations to analyze
+
+        Returns:
+            List of detected patterns
+        """
+        # In incremental mode, we process the provided documents/concepts
+        # This is the same as full mode but with the assumption that
+        # only new/changed documents/concepts are provided
+        all_patterns = []
+
+        # Detect temporal patterns (limited to provided documents)
+        if self.config.enable_temporal_detection:
+            temporal_patterns = self._detect_temporal_patterns(documents)
+            all_patterns.extend(temporal_patterns)
+
+        # Detect causal patterns (limited to provided relations)
+        if self.config.enable_causal_detection:
+            causal_patterns = self._detect_causal_patterns(relations)
+            all_patterns.extend(causal_patterns)
+
+        # Detect evolutionary patterns (limited to provided concepts)
+        if self.config.enable_evolutionary_detection:
+            evolutionary_patterns = self._detect_evolutionary_patterns(concepts)
+            all_patterns.extend(evolutionary_patterns)
+
+        # Detect conflict patterns (limited to provided concepts/relations)
+        if self.config.enable_conflict_detection:
+            conflict_patterns = self._detect_conflict_patterns(concepts, relations)
+            all_patterns.extend(conflict_patterns)
+
+        # Filter patterns by minimum confidence
+        filtered_patterns = [
+            p for p in all_patterns
+            if p.confidence >= self.config.min_pattern_confidence
+        ]
+
+        return filtered_patterns
+
+    def _detect_hybrid(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept],
+        relations: List[Relation]
+    ) -> List[Pattern]:
+        """
+        Detect patterns in hybrid mode (smart selection based on document count).
+
+        Hybrid mode uses a threshold heuristic:
+        - If documents < 10: process all (like full mode)
+        - If documents >= 10: process all (like full mode for now)
+
+        Args:
+            documents: List of documents to analyze
+            concepts: List of concepts to analyze
+            relations: List of relations to analyze
+
+        Returns:
+            List of detected patterns
+        """
+        # Threshold for hybrid mode
+        threshold = 10
+
+        if len(documents) < threshold:
+            logger.info(f"Hybrid mode: {len(documents)} documents < {threshold} threshold, processing all")
+            return self._detect_full(documents, concepts, relations)
+        else:
+            logger.info(f"Hybrid mode: {len(documents)} documents >= {threshold} threshold, processing all")
+            return self._detect_full(documents, concepts, relations)
 
     def _detect_temporal_patterns(self, documents: List[EnhancedDocument]) -> List[Pattern]:
         """

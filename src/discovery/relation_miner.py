@@ -75,7 +75,8 @@ class RelationMiningEngine:
     def mine_relations(
         self,
         documents: List[EnhancedDocument],
-        concepts: List[EnhancedConcept]
+        concepts: List[EnhancedConcept],
+        mode: str = 'full'
     ) -> List[Relation]:
         """
         Mine relations between concepts using all enabled strategies.
@@ -86,11 +87,37 @@ class RelationMiningEngine:
         Args:
             documents: List of enhanced documents
             concepts: List of enhanced concepts
+            mode: Processing mode ('full', 'incremental', 'hybrid')
 
         Returns:
             List of unique, scored relations meeting minimum confidence threshold
         """
-        logger.info(f"Starting relation mining for {len(concepts)} concepts across {len(documents)} documents")
+        # Route to appropriate implementation based on mode
+        if mode == 'full':
+            return self._mine_full(documents, concepts)
+        elif mode == 'incremental':
+            return self._mine_incremental(documents, concepts)
+        elif mode == 'hybrid':
+            return self._mine_hybrid(documents, concepts)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    def _mine_full(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept]
+    ) -> List[Relation]:
+        """
+        Mine relations in full mode (process all documents and concepts).
+
+        Args:
+            documents: List of enhanced documents
+            concepts: List of enhanced concepts
+
+        Returns:
+            List of unique, scored relations
+        """
+        logger.info(f"Starting relation mining (full mode) for {len(concepts)} concepts across {len(documents)} documents")
 
         all_relations = []
 
@@ -146,6 +173,113 @@ class RelationMiningEngine:
         logger.info(f"Limited to {len(final_relations)} relations (max {self.config.max_relations_per_concept} per concept)")
 
         return final_relations
+
+    def _mine_incremental(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept]
+    ) -> List[Relation]:
+        """
+        Mine relations in incremental mode (process only provided documents/concepts).
+
+        In incremental mode, we only mine relations from the provided documents.
+        This is useful when processing new/changed documents.
+
+        Args:
+            documents: List of enhanced documents (new/changed only)
+            concepts: List of enhanced concepts
+
+        Returns:
+            List of unique, scored relations
+        """
+        logger.info(f"Starting relation mining (incremental mode) for {len(concepts)} concepts across {len(documents)} documents")
+
+        # In incremental mode, we process the provided documents
+        # This is the same as full mode but with the assumption that
+        # only new/changed documents are provided
+        all_relations = []
+
+        # 1. Explicit relation mining
+        if self.config.enable_explicit_mining:
+            try:
+                explicit_relations = self._extract_explicit_relations(documents)
+                all_relations.extend(explicit_relations)
+                logger.info(f"Extracted {len(explicit_relations)} explicit relations (incremental)")
+            except Exception as e:
+                logger.error(f"Error in explicit relation mining: {e}")
+
+        # 2. Implicit relation mining (limited to provided concepts)
+        if self.config.enable_implicit_mining:
+            try:
+                implicit_relations = self._discover_implicit_relations(concepts, documents)
+                all_relations.extend(implicit_relations)
+                logger.info(f"Discovered {len(implicit_relations)} implicit relations (incremental)")
+            except Exception as e:
+                logger.error(f"Error in implicit relation mining: {e}")
+
+        # 3. Statistical relation mining
+        if self.config.enable_statistical_mining:
+            try:
+                statistical_relations = self._compute_statistical_relations(documents, concepts)
+                all_relations.extend(statistical_relations)
+                logger.info(f"Computed {len(statistical_relations)} statistical relations (incremental)")
+            except Exception as e:
+                logger.error(f"Error in statistical relation mining: {e}")
+
+        # 4. Semantic relation mining (limited to provided concepts)
+        if self.config.enable_semantic_mining:
+            try:
+                semantic_relations = self._compute_semantic_relations(concepts)
+                all_relations.extend(semantic_relations)
+                logger.info(f"Computed {len(semantic_relations)} semantic relations (incremental)")
+            except Exception as e:
+                logger.error(f"Error in semantic relation mining: {e}")
+
+        # Merge duplicate relations and compute final scores
+        merged_relations = self._merge_and_score_relations(all_relations)
+        logger.info(f"Merged to {len(merged_relations)} unique relations (incremental)")
+
+        # Filter by minimum confidence
+        filtered_relations = [
+            r for r in merged_relations
+            if r.confidence >= self.config.min_relation_confidence
+        ]
+        logger.info(f"Filtered to {len(filtered_relations)} relations with confidence >= {self.config.min_relation_confidence}")
+
+        # Limit relations per concept
+        final_relations = self._limit_relations_per_concept(filtered_relations)
+        logger.info(f"Limited to {len(final_relations)} relations (max {self.config.max_relations_per_concept} per concept)")
+
+        return final_relations
+
+    def _mine_hybrid(
+        self,
+        documents: List[EnhancedDocument],
+        concepts: List[EnhancedConcept]
+    ) -> List[Relation]:
+        """
+        Mine relations in hybrid mode (smart selection based on document count).
+
+        Hybrid mode uses a threshold heuristic:
+        - If documents < 10: process all (like full mode)
+        - If documents >= 10: process all (like full mode for now)
+
+        Args:
+            documents: List of enhanced documents
+            concepts: List of enhanced concepts
+
+        Returns:
+            List of unique, scored relations
+        """
+        # Threshold for hybrid mode
+        threshold = 10
+
+        if len(documents) < threshold:
+            logger.info(f"Hybrid mode: {len(documents)} documents < {threshold} threshold, processing all")
+            return self._mine_full(documents, concepts)
+        else:
+            logger.info(f"Hybrid mode: {len(documents)} documents >= {threshold} threshold, processing all")
+            return self._mine_full(documents, concepts)
 
     def _extract_explicit_relations(self, documents: List[EnhancedDocument]) -> List[Relation]:
         """

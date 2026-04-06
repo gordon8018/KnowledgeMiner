@@ -5,6 +5,7 @@ This module implements insight generation from patterns, relations, and gaps,
 using multiple strategies and significance-based ranking.
 """
 
+import logging
 from typing import List
 from datetime import datetime
 from src.discovery.config import DiscoveryConfig
@@ -13,6 +14,8 @@ from src.discovery.models.pattern import Pattern, PatternType
 from src.discovery.models.gap import KnowledgeGap, GapType
 from src.discovery.utils.scoring import compute_significance_score, rank_by_score
 from src.core.relation_model import Relation
+
+logger = logging.getLogger(__name__)
 
 
 class InsightGenerator:
@@ -41,10 +44,39 @@ class InsightGenerator:
         self,
         relations: List[Relation],
         patterns: List[Pattern],
-        gaps: List[KnowledgeGap]
+        gaps: List[KnowledgeGap],
+        mode: str = 'full'
     ) -> List[Insight]:
         """
         Generate insights from all sources.
+
+        Args:
+            relations: List of relations
+            patterns: List of patterns
+            gaps: List of knowledge gaps
+            mode: Processing mode ('full', 'incremental', 'hybrid')
+
+        Returns:
+            List of ranked and filtered insights
+        """
+        # Route to appropriate implementation based on mode
+        if mode == 'full':
+            return self._generate_full(relations, patterns, gaps)
+        elif mode == 'incremental':
+            return self._generate_incremental(relations, patterns, gaps)
+        elif mode == 'hybrid':
+            return self._generate_hybrid(relations, patterns, gaps)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    def _generate_full(
+        self,
+        relations: List[Relation],
+        patterns: List[Pattern],
+        gaps: List[KnowledgeGap]
+    ) -> List[Insight]:
+        """
+        Generate insights in full mode (process all relations, patterns, and gaps).
 
         Args:
             relations: List of relations
@@ -75,6 +107,82 @@ class InsightGenerator:
         ranked_insights = self._rank_insights(all_insights)
 
         return ranked_insights
+
+    def _generate_incremental(
+        self,
+        relations: List[Relation],
+        patterns: List[Pattern],
+        gaps: List[KnowledgeGap]
+    ) -> List[Insight]:
+        """
+        Generate insights in incremental mode (process only provided relations/patterns/gaps).
+
+        In incremental mode, we only generate insights from the provided relations/patterns/gaps.
+        This is useful when processing new/changed data.
+
+        Args:
+            relations: List of relations (new/changed only)
+            patterns: List of patterns (new/changed only)
+            gaps: List of knowledge gaps (new/changed only)
+
+        Returns:
+            List of ranked and filtered insights
+        """
+        # In incremental mode, we process the provided relations/patterns/gaps
+        # This is the same as full mode but with the assumption that
+        # only new/changed relations/patterns/gaps are provided
+        all_insights = []
+
+        # Generate insights from each source
+        pattern_insights = self._generate_pattern_insights(patterns)
+        all_insights.extend(pattern_insights)
+
+        relation_insights = self._generate_relation_insights(relations)
+        all_insights.extend(relation_insights)
+
+        gap_insights = self._generate_gap_insights(gaps)
+        all_insights.extend(gap_insights)
+
+        integrated_insights = self._generate_integrated_insights(
+            patterns, relations, gaps
+        )
+        all_insights.extend(integrated_insights)
+
+        # Rank and filter insights
+        ranked_insights = self._rank_insights(all_insights)
+
+        return ranked_insights
+
+    def _generate_hybrid(
+        self,
+        relations: List[Relation],
+        patterns: List[Pattern],
+        gaps: List[KnowledgeGap]
+    ) -> List[Insight]:
+        """
+        Generate insights in hybrid mode (smart selection based on pattern count).
+
+        Hybrid mode uses a threshold heuristic:
+        - If patterns < 10: process all (like full mode)
+        - If patterns >= 10: process all (like full mode for now)
+
+        Args:
+            relations: List of relations
+            patterns: List of patterns
+            gaps: List of knowledge gaps
+
+        Returns:
+            List of ranked and filtered insights
+        """
+        # Threshold for hybrid mode
+        threshold = 10
+
+        if len(patterns) < threshold:
+            logger.info(f"Hybrid mode: {len(patterns)} patterns < {threshold} threshold, processing all")
+            return self._generate_full(relations, patterns, gaps)
+        else:
+            logger.info(f"Hybrid mode: {len(patterns)} patterns >= {threshold} threshold, processing all")
+            return self._generate_full(relations, patterns, gaps)
 
     def _generate_pattern_insights(self, patterns: List[Pattern]) -> List[Insight]:
         """
