@@ -6,7 +6,7 @@ tracking issues, and reporting on quality metrics.
 """
 
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Protocol
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
@@ -178,3 +178,138 @@ class ExtendedQualityReport(BaseModel):
     recommendations: List[str]
     detailed_findings: List[str]
     report_file_path: str
+
+
+# Issue 3: Add Protocol interfaces for component contracts
+
+class HealthChecker(Protocol):
+    """
+    Protocol defining the interface for Wiki health checking components.
+
+    Any class that implements health checking must provide these methods.
+    """
+
+    def check_consistency(self) -> List[Issue]:
+        """
+        Detect consistency issues in Wiki.
+
+        Returns:
+            List of detected Issue objects
+        """
+        ...
+
+    def analyze_quality(self) -> QualityReport:
+        """
+        Analyze overall Wiki quality.
+
+        Returns:
+            QualityReport with scores and recommendations
+        """
+        ...
+
+    def detect_staleness(self) -> List[Issue]:
+        """
+        Detect stale content.
+
+        Returns:
+            List of staleness issues
+        """
+        ...
+
+    def run_health_check(self) -> HealthCheckResult:
+        """
+        Orchestrate complete health check.
+
+        Returns:
+            HealthCheckResult with complete health status
+        """
+        ...
+
+
+class IssueClassifier(Protocol):
+    """
+    Protocol defining the interface for issue classification components.
+
+    Any class that implements issue classification must provide these methods.
+    """
+
+    def classify_issues(self, issues: List[Issue]) -> List[ClassifiedIssue]:
+        """
+        Classify issues with repair information.
+
+        Args:
+            issues: List of issues to classify
+
+        Returns:
+            List of ClassifiedIssue objects with repair information
+        """
+        ...
+
+    def create_repair_plan(self, classified_issues: List[ClassifiedIssue]) -> RepairPlan:
+        """
+        Create comprehensive repair plan.
+
+        Args:
+            classified_issues: List of classified issues
+
+        Returns:
+            RepairPlan with repair strategy and order
+        """
+        ...
+
+
+class QualityReporter(Protocol):
+    """
+    Protocol defining the interface for quality reporting components.
+
+    Any class that implements quality reporting must provide these methods.
+    """
+
+    def generate_report(self, health_check_result: HealthCheckResult) -> ExtendedQualityReport:
+        """
+        Generate comprehensive quality report from health check result.
+
+        Args:
+            health_check_result: Result from health check
+
+        Returns:
+            ExtendedQualityReport with all findings
+        """
+        ...
+
+    def track_trend(self, report_history: List[ExtendedQualityReport]) -> TrendAnalysis:
+        """
+        Analyze quality trends over time.
+
+        Args:
+            report_history: List of historical quality reports
+
+        Returns:
+            TrendAnalysis with direction, confidence, and predictions
+        """
+        ...
+
+    def create_dashboard_data(self, reports: List[ExtendedQualityReport]) -> DashboardData:
+        """
+        Prepare data for visualization dashboard.
+
+        Args:
+            reports: List of quality reports
+
+        Returns:
+            DashboardData with chart information
+        """
+        ...
+
+    def send_alert(self, health_check_result: HealthCheckResult, alert_path: Optional[str] = None) -> bool:
+        """
+        Send alert if quality degrades beyond threshold.
+
+        Args:
+            health_check_result: Result from health check
+            alert_path: Optional path for alert log file
+
+        Returns:
+            True if alert was sent successfully, False otherwise
+        """
+        ...

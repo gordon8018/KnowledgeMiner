@@ -12,7 +12,9 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 from statistics import mean
+from functools import wraps
 import logging
+import time
 
 from src.wiki.core.storage import WikiStore
 from src.wiki.quality.models import (
@@ -33,6 +35,158 @@ from src.wiki.quality.models import (
 logger = logging.getLogger(__name__)
 
 
+# Issue 2: AlertManager for deduplication
+class AlertManager:
+    """
+    Manages alert deduplication and cooldown periods.
+
+    Tracks active alerts and prevents duplicate alerts within cooldown periods.
+    """
+
+    def __init__(self, cooldown_minutes: int = 30):
+        """
+        Initialize AlertManager.
+
+        Args:
+            cooldown_minutes: Minimum minutes between same alert type (default: 30)
+        """
+        self.cooldown_minutes = cooldown_minutes
+        self.active_alerts: Dict[str, datetime] = {}  # alert_signature -> last_sent_time
+
+    def _create_alert_signature(self, health_check_result: HealthCheckResult) -> str:
+        """
+        Create unique signature for alert deduplication.
+
+        Args:
+            health_check_result: Health check result
+
+        Returns:
+            Alert signature string
+        """
+        # Create signature based on key characteristics
+        score_bucket = int(health_check_result.quality_report.overall_score * 10) / 10
+        critical_count = health_check_result.critical_issues
+
+        # Get top issue types
+        issue_types = sorted(set(
+            i.issue_type if isinstance(i.issue_type, str) else i.issue_type.value
+            for i in health_check_result.consistency_issues + health_check_result.staleness_issues
+        ))
+
+        return f"score_{score_bucket}_critical_{critical_count}_issues_{'_'.join(issue_types)}"
+
+    def should_send_alert(self, health_check_result: HealthCheckResult) -> bool:
+        """
+        Check if alert should be sent (not in cooldown).
+
+        Args:
+            health_check_result: Health check result
+
+        Returns:
+            True if alert should be sent, False if in cooldown
+        """
+        signature = self._create_alert_signature(health_check_result)
+        current_time = datetime.now()
+
+        if signature in self.active_alerts:
+            last_sent = self.active_alerts[signature]
+            elapsed_minutes = (current_time - last_sent).total_seconds() / 60
+
+            if elapsed_minutes < self.cooldown_minutes:
+                logger.info(
+                    f"Alert '{signature}' in cooldown: {elapsed_minutes:.1f}m elapsed, "
+                    f"{self.cooldown_minutes - elapsed_minutes:.1f}m remaining"
+                )
+                return False
+
+        return True
+
+    def mark_alert_sent(self, health_check_result: HealthCheckResult):
+        """
+        Mark alert as sent to start cooldown period.
+
+        Args:
+            health_check_result: Health check result
+        """
+        signature = self._create_alert_signature(health_check_result)
+        self.active_alerts[signature] = datetime.now()
+        logger.debug(f"Marked alert '{signature}' as sent")
+
+    def clear_old_alerts(self, max_age_hours: int = 24):
+        """
+        Clear old alert signatures from tracking.
+
+        Args:
+            max_age_hours: Maximum age in hours to keep alerts
+        """
+        current_time = datetime.now()
+        expired_signatures = []
+
+        for signature, last_sent in self.active_alerts.items():
+            age_hours = (current_time - last_sent).total_seconds() / 3600
+            if age_hours > max_age_hours:
+                expired_signatures.append(signature)
+
+        for signature in expired_signatures:
+            del self.active_alerts[signature]
+            logger.debug(f"Cleared expired alert signature: {signature}")
+
+
+# Issue 1: Rate limiting decorator for report generation
+def rate_limit(min_interval_seconds: int = 300):
+    """
+    Decorator to rate limit function calls.
+
+    Args:
+        min_interval_seconds: Minimum seconds between calls (default: 300 = 5 minutes)
+
+    Returns:
+        Decorated function with rate limiting
+    """
+    def decorator(func):
+        last_called = {}  # Store last call time per instance/report type
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # Check if rate limiting is enabled for this instance
+            if hasattr(self, 'enable_rate_limiting') and not self.enable_rate_limiting:
+                return func(self, *args, **kwargs)
+
+            # Create a unique key for this instance and function
+            key = (id(self), func.__name__)
+
+            # Get current time
+            current_time = time.time()
+
+            # Check if we've been called recently
+            if key in last_called:
+                elapsed = current_time - last_called[key]
+                if elapsed < min_interval_seconds:
+                    remaining = int(min_interval_seconds - elapsed)
+                    logger.info(
+                        f"Rate limited: {func.__name__} called too soon. "
+                        f"Wait {remaining}s before next call."
+                    )
+                    # Return cached result if available
+                    if hasattr(self, '_last_report_result') and func.__name__ == 'generate_report':
+                        return self._last_report_result
+
+            # Update last called time
+            last_called[key] = current_time
+
+            # Call the actual function
+            result = func(self, *args, **kwargs)
+
+            # Cache result for generate_report
+            if func.__name__ == 'generate_report':
+                self._last_report_result = result
+
+            return result
+
+        return wrapper
+    return decorator
+
+
 class QualityReporter:
     """
     Generates quality reports and tracks quality trends over time.
@@ -44,17 +198,22 @@ class QualityReporter:
     - Alert system for quality degradation
     """
 
-    def __init__(self, wiki_store: WikiStore, output_dir: str):
+    def __init__(self, wiki_store: WikiStore, output_dir: str, enable_rate_limiting: bool = True):
         """
         Initialize the QualityReporter.
 
         Args:
             wiki_store: WikiStore instance for accessing Wiki data
             output_dir: Directory to save generated reports
+            enable_rate_limiting: Whether to enable rate limiting (default: True)
         """
         self.wiki_store = wiki_store
         self.output_dir = output_dir
         self.report_history: List[ExtendedQualityReport] = []
+        self.enable_rate_limiting = enable_rate_limiting
+
+        # Issue 2: Initialize alert manager for deduplication
+        self.alert_manager = AlertManager(cooldown_minutes=30)
 
         # Create output directory if it doesn't exist
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -83,6 +242,7 @@ class QualityReporter:
         except Exception as e:
             logger.warning(f"Failed to load report history: {e}")
 
+    @rate_limit(min_interval_seconds=300)  # Issue 1: Add rate limiting (5 minutes)
     def generate_report(self, health_check_result: HealthCheckResult) -> ExtendedQualityReport:
         """
         Generate comprehensive quality report from health check result.
@@ -673,12 +833,17 @@ class QualityReporter:
         Returns:
             True if alert was sent successfully, False otherwise
         """
-        # Check alert conditions
+        # Issue 2: Check alert conditions with deduplication
         should_alert = self._should_send_alert(health_check_result)
 
         if not should_alert:
             logger.debug("No alert conditions met")
             return True  # Not an error, just no alert needed
+
+        # Issue 2: Check alert deduplication cooldown
+        if not self.alert_manager.should_send_alert(health_check_result):
+            logger.debug("Alert in cooldown period, skipping")
+            return True
 
         # Generate alert content
         alert_content = self._generate_alert_content(health_check_result)
@@ -695,6 +860,12 @@ class QualityReporter:
             except Exception as e:
                 logger.error(f"Failed to save alert to {alert_path}: {e}")
                 return False
+
+        # Issue 2: Mark alert as sent
+        self.alert_manager.mark_alert_sent(health_check_result)
+
+        # Clean up old alerts periodically
+        self.alert_manager.clear_old_alerts(max_age_hours=24)
 
         return True
 

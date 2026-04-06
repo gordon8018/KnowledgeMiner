@@ -7,9 +7,14 @@ consistency checks, quality analysis, and staleness detection.
 
 import re
 import uuid
+import logging
 from typing import List, Dict, Any, Optional, Set
 from datetime import datetime, timedelta
 from collections import defaultdict
+from functools import lru_cache
+import hashlib
+
+logger = logging.getLogger(__name__)
 
 try:
     import networkx as nx
@@ -37,6 +42,77 @@ DEFAULT_CONFIG = {
 }
 
 
+# Issue 6: Circuit breaker for WikiCore calls
+class CircuitBreaker:
+    """
+    Circuit breaker pattern to prevent cascading failures.
+
+    Opens circuit after threshold failures, closes after recovery timeout.
+    """
+
+    def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
+        """
+        Initialize circuit breaker.
+
+        Args:
+            failure_threshold: Number of failures before opening circuit
+            recovery_timeout: Seconds to wait before attempting recovery
+        """
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = "closed"  # closed, open, half-open
+
+    def call(self, func, *args, **kwargs):
+        """
+        Execute function with circuit breaker protection.
+
+        Args:
+            func: Function to call
+            *args: Function arguments
+            **kwargs: Function keyword arguments
+
+        Returns:
+            Function result or fallback value
+
+        Raises:
+            Exception: If circuit is open and no fallback provided
+        """
+        # Check if circuit should transition to half-open
+        if self.state == "open":
+            if datetime.now() - self.last_failure_time >= timedelta(seconds=self.recovery_timeout):
+                logger.info("Circuit breaker transitioning to half-open")
+                self.state = "half-open"
+            else:
+                logger.warning("Circuit breaker is OPEN, blocking call")
+                raise Exception("Circuit breaker is open - service unavailable")
+
+        try:
+            result = func(*args, **kwargs)
+
+            # Reset on success
+            if self.state == "half-open":
+                logger.info("Circuit breaker closing after successful call")
+                self.state = "closed"
+                self.failure_count = 0
+
+            return result
+
+        except Exception as e:
+            self.failure_count += 1
+            self.last_failure_time = datetime.now()
+
+            # Open circuit if threshold reached
+            if self.failure_count >= self.failure_threshold:
+                logger.error(
+                    f"Circuit breaker OPEN after {self.failure_count} failures: {e}"
+                )
+                self.state = "open"
+
+            raise e
+
+
 class HealthMonitor:
     """
     Monitor Wiki health and detect quality issues.
@@ -58,24 +134,154 @@ class HealthMonitor:
         self.wiki_store = wiki_store
         self.config = {**DEFAULT_CONFIG, **(config or {})}
 
-    def _get_all_pages(self) -> List[WikiPage]:
-        """Helper method to retrieve all pages from WikiStore."""
-        # This is a workaround - we'll need to add proper query support to WikiStore
-        pages = []
-        # Try to get pages from storage
-        try:
+        # Issue 5: Cache for content hashes and similarity calculations
+        self._content_hash_cache: Dict[str, str] = {}
+        self._similarity_cache: Dict[tuple, float] = {}
+
+        # Issue 6: Circuit breaker for WikiCore calls
+        self.circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60)
+
+    def _get_all_pages(self, page_size: Optional[int] = None) -> List[WikiPage]:
+        """
+        Helper method to retrieve all pages from WikiStore with circuit breaker protection.
+
+        Args:
+            page_size: Optional batch size for pagination (default: None for no pagination)
+
+        Returns:
+            List of all WikiPage objects
+        """
+        def _fetch_pages():
+            # This is a workaround - we'll need to add proper query support to WikiStore
+            pages = []
+            # Try to get pages from storage
             for page_type in [PageType.TOPIC, PageType.CONCEPT, PageType.RELATION]:
                 dir_path = self.wiki_store._get_page_dir(page_type)
                 if dir_path.exists():
-                    for file_path in dir_path.glob("*.md"):
-                        page_id = file_path.stem
-                        page = self.wiki_store.get_page(page_id)
-                        if page:
-                            pages.append(page)
+                    # Issue 4: Add pagination support
+                    file_paths = list(dir_path.glob("*.md"))
+
+                    if page_size:
+                        # Process in batches to reduce memory
+                        for i in range(0, len(file_paths), page_size):
+                            batch = file_paths[i:i + page_size]
+                            for file_path in batch:
+                                page_id = file_path.stem
+                                page = self.wiki_store.get_page(page_id)
+                                if page:
+                                    pages.append(page)
+
+                            # Clear cache between batches for large wikis
+                            if len(file_paths) > 1000:
+                                self.clear_cache()
+                    else:
+                        # Process all at once for small wikis
+                        for file_path in file_paths:
+                            page_id = file_path.stem
+                            page = self.wiki_store.get_page(page_id)
+                            if page:
+                                pages.append(page)
+            return pages
+
+        # Issue 6: Use circuit breaker for WikiCore calls
+        try:
+            return self.circuit_breaker.call(_fetch_pages)
         except Exception as e:
-            # If storage access fails, return empty list
-            pass
-        return pages
+            logger.warning(f"Failed to fetch pages due to circuit breaker: {e}")
+            return []
+
+    def check_orphan_pages(self, page_size: Optional[int] = None) -> List[Issue]:
+        """
+        Check for orphan pages with pagination support.
+
+        Args:
+            page_size: Optional batch size for processing (default: 1000)
+
+        Returns:
+            List of orphan page issues
+        """
+        if page_size is None:
+            page_size = 1000  # Default page size
+
+        pages = self._get_all_pages(page_size=page_size)
+        if not pages:
+            return []
+
+        issues = []
+
+        # Build page link graph
+        page_links = defaultdict(list)
+        all_page_ids = {page.id for page in pages}
+
+        for page in pages:
+            links = page.metadata.get("links", [])
+            if isinstance(links, list):
+                page_links[page.id] = links
+
+        # Check for orphan pages
+        linked_pages = set()
+        for links in page_links.values():
+            linked_pages.update(links)
+
+        for page in pages:
+            if page.id not in linked_pages and len(page_links.get(page.id, [])) > 0:
+                # Page has no incoming links but has outgoing links
+                issues.append(Issue(
+                    id=str(uuid.uuid4()),
+                    issue_type=IssueType.ORPHAN_PAGE,
+                    severity=IssueSeverity.LOW,
+                    page_id=page.id,
+                    description=f"Page has no incoming links",
+                    detected_at=datetime.now(),
+                    metadata={"outgoing_links": len(page_links.get(page.id, []))}
+                ))
+
+        return issues
+
+    def check_broken_links(self, page_size: Optional[int] = None) -> List[Issue]:
+        """
+        Check for broken links with pagination support.
+
+        Args:
+            page_size: Optional batch size for processing (default: 1000)
+
+        Returns:
+            List of broken link issues
+        """
+        if page_size is None:
+            page_size = 1000  # Default page size
+
+        pages = self._get_all_pages(page_size=page_size)
+        if not pages:
+            return []
+
+        issues = []
+
+        # Build page link graph
+        page_links = defaultdict(list)
+        all_page_ids = {page.id for page in pages}
+
+        for page in pages:
+            links = page.metadata.get("links", [])
+            if isinstance(links, list):
+                page_links[page.id] = links
+
+        # Check for broken links
+        for page in pages:
+            links = page_links.get(page.id, [])
+            for link in links:
+                if link not in all_page_ids:
+                    issues.append(Issue(
+                        id=str(uuid.uuid4()),
+                        issue_type=IssueType.BROKEN_LINK,
+                        severity=IssueSeverity.CRITICAL,
+                        page_id=page.id,
+                        description=f"Broken link to non-existent page: {link}",
+                        detected_at=datetime.now(),
+                        metadata={"broken_link": link}
+                    ))
+
+        return issues
 
     def check_consistency(self) -> List[Issue]:
         """
@@ -185,9 +391,33 @@ class HealthMonitor:
 
         return issues
 
+    # Issue 5: Add caching for expensive operations
+    def _get_content_hash(self, content: str) -> str:
+        """
+        Get cached hash for content.
+
+        Args:
+            content: Content string to hash
+
+        Returns:
+            Hash of content
+        """
+        # Create hash key
+        content_key = f"content_{len(content)}_{content[:50]}"
+
+        # Return cached if available
+        if content_key in self._content_hash_cache:
+            return self._content_hash_cache[content_key]
+
+        # Calculate and cache hash
+        content_hash = hashlib.md5(content.encode()).hexdigest()
+        self._content_hash_cache[content_key] = content_hash
+
+        return content_hash
+
     def _calculate_similarity(self, content1: str, content2: str) -> float:
         """
-        Calculate Jaccard similarity between two pieces of content.
+        Calculate Jaccard similarity between two pieces of content with caching.
 
         Args:
             content1: First content string
@@ -196,6 +426,14 @@ class HealthMonitor:
         Returns:
             Similarity score between 0.0 and 1.0
         """
+        # Issue 5: Check cache
+        hash1 = self._get_content_hash(content1)
+        hash2 = self._get_content_hash(content2)
+        cache_key = (hash1, hash2)
+
+        if cache_key in self._similarity_cache:
+            return self._similarity_cache[cache_key]
+
         # Tokenize content into words
         words1 = set(re.findall(r'\w+', content1.lower()))
         words2 = set(re.findall(r'\w+', content2.lower()))
@@ -207,7 +445,18 @@ class HealthMonitor:
         intersection = len(words1 & words2)
         union = len(words1 | words2)
 
-        return intersection / union if union > 0 else 0.0
+        similarity = intersection / union if union > 0 else 0.0
+
+        # Issue 5: Cache result
+        self._similarity_cache[cache_key] = similarity
+
+        return similarity
+
+    def clear_cache(self):
+        """Clear all caches to free memory."""
+        self._content_hash_cache.clear()
+        self._similarity_cache.clear()
+        logger.debug("Cleared content and similarity caches")
 
     def analyze_quality(self) -> QualityReport:
         """

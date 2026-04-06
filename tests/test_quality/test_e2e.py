@@ -78,7 +78,8 @@ def quality_system_with_store(wiki_store):
 
     monitor = HealthMonitor(wiki_store)
     classifier = IssueClassifier()
-    reporter = QualityReporter(wiki_store, output_dir)
+    # Disable rate limiting for tests to allow rapid report generation
+    reporter = QualityReporter(wiki_store, output_dir, enable_rate_limiting=False)
 
     yield {
         "monitor": monitor,
