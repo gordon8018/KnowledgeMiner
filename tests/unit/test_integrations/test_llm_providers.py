@@ -27,12 +27,13 @@ class TestRetryDecorator:
         """Test that transient errors trigger retries."""
         call_count = 0
 
+        # Use Timeout which is recognized as retryable
         @retry_with_exponential_backoff(max_retries=3)
         def flaky_call():
             nonlocal call_count
             call_count += 1
             if call_count < 2:
-                raise Exception("Transient error")
+                raise TimeoutError("Connection timeout")
             return "success"
 
         result = flaky_call()

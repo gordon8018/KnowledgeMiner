@@ -20,7 +20,8 @@ def test_compile_documents():
             "source_dir": source_dir,
             "target_dir": target_dir,
             "categories": ["技术指标", "战法"],
-            "extraction": {"min_confidence": 0.5}
+            "extraction": {"min_confidence": 0.5},
+            "interactive_mode": False  # Disable interactive mode for tests
         }
 
         compiler = KnowledgeCompiler(config)
