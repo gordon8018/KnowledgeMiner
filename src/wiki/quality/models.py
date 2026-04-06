@@ -64,3 +64,52 @@ class HealthCheckResult(BaseModel):
     total_issues: int
     critical_issues: int
     status: str  # "healthy", "degraded", "unhealthy"
+
+
+class RepairComplexity(str, Enum):
+    """Complexity level of repairing an issue."""
+    SIMPLE = "simple"      # 5-15 minutes, automated
+    MEDIUM = "medium"      # 15-60 minutes, semi-automated
+    COMPLEX = "complex"    # 1+ hours, manual
+
+
+class RepairApproach(str, Enum):
+    """Approach required to repair an issue."""
+    AUTOMATIC = "automatic"        # Fully automated repair
+    SEMI_AUTOMATIC = "semi_auto"   # Human in the loop
+    MANUAL = "manual"              # Requires manual intervention
+
+
+class IssueCategory(str, Enum):
+    """Category of quality issue."""
+    DATA_INTEGRITY = "data_integrity"    # Orphan pages, broken links
+    CONTENT_QUALITY = "content_quality"  # Low quality, stale content
+    STRUCTURAL = "structural"            # Circular refs, duplicates
+    METADATA = "metadata"               # Missing metadata
+
+
+class ClassifiedIssue(BaseModel):
+    """An issue that has been classified with repair information."""
+    model_config = ConfigDict(use_enum_values=True)
+
+    original_issue: Issue
+    category: IssueCategory
+    complexity: RepairComplexity
+    approach: RepairApproach
+    priority_score: float  # 0.0 to 1.0
+    estimated_repair_time_minutes: int
+    suggested_actions: List[str]
+    dependencies: List[str]  # IDs of issues this depends on
+    can_repair_automatically: bool
+
+
+class RepairPlan(BaseModel):
+    """Comprehensive plan for repairing classified issues."""
+    total_issues: int
+    automatic_repairs: int
+    semi_automatic_repairs: int
+    manual_repairs: int
+    total_estimated_time_minutes: int
+    issue_groups: Dict[str, List[ClassifiedIssue]]  # grouped by approach
+    recommended_order: List[str]  # Issue IDs in repair order
+    created_at: datetime

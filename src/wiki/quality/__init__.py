@@ -10,9 +10,15 @@ from .models import (
     IssueSeverity,
     Issue,
     QualityReport,
-    HealthCheckResult
+    HealthCheckResult,
+    RepairComplexity,
+    RepairApproach,
+    IssueCategory,
+    ClassifiedIssue,
+    RepairPlan
 )
 from .monitor import HealthMonitor
+from .classifier import IssueClassifier
 
 __all__ = [
     "IssueType",
@@ -20,5 +26,11 @@ __all__ = [
     "Issue",
     "QualityReport",
     "HealthCheckResult",
-    "HealthMonitor"
+    "HealthMonitor",
+    "RepairComplexity",
+    "RepairApproach",
+    "IssueCategory",
+    "ClassifiedIssue",
+    "RepairPlan",
+    "IssueClassifier"
 ]
