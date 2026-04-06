@@ -15,10 +15,17 @@ from .models import (
     RepairApproach,
     IssueCategory,
     ClassifiedIssue,
-    RepairPlan
+    RepairPlan,
+    TrendDirection,
+    MetricType,
+    TrendPoint,
+    TrendAnalysis,
+    DashboardData,
+    ExtendedQualityReport
 )
 from .monitor import HealthMonitor
 from .classifier import IssueClassifier
+from .reporter import QualityReporter
 
 __all__ = [
     "IssueType",
@@ -32,5 +39,12 @@ __all__ = [
     "IssueCategory",
     "ClassifiedIssue",
     "RepairPlan",
-    "IssueClassifier"
+    "IssueClassifier",
+    "TrendDirection",
+    "MetricType",
+    "TrendPoint",
+    "TrendAnalysis",
+    "DashboardData",
+    "ExtendedQualityReport",
+    "QualityReporter"
 ]

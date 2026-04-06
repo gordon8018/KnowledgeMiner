@@ -113,3 +113,68 @@ class RepairPlan(BaseModel):
     issue_groups: Dict[str, List[ClassifiedIssue]]  # grouped by approach
     recommended_order: List[str]  # Issue IDs in repair order
     created_at: datetime
+
+
+class TrendDirection(str, Enum):
+    """Direction of quality trend over time."""
+    IMPROVING = "improving"      # Quality getting better
+    STABLE = "stable"           # No significant change
+    DEGRADING = "degrading"     # Quality getting worse
+    UNKNOWN = "unknown"         # Insufficient data
+
+
+class MetricType(str, Enum):
+    """Types of metrics tracked in trend analysis."""
+    OVERALL_QUALITY = "overall_quality"
+    CONSISTENCY_SCORE = "consistency_score"
+    COMPLETENESS_SCORE = "completeness_score"
+    FRESHNESS_SCORE = "freshness_score"
+    ISSUE_COUNT = "issue_count"
+    CRITICAL_ISSUE_COUNT = "critical_issue_count"
+
+
+class TrendPoint(BaseModel):
+    """Single data point in a trend analysis."""
+    timestamp: datetime
+    metric_type: MetricType
+    value: float
+    change_from_previous: float
+    change_percentage: float
+
+
+class TrendAnalysis(BaseModel):
+    """Analysis of quality trends over time."""
+    direction: TrendDirection
+    confidence: float  # 0.0 to 1.0
+    trend_points: List[TrendPoint]
+    summary: str
+    predicted_quality_30_days: Optional[float] = None
+    recommendations: List[str] = []
+
+
+class DashboardData(BaseModel):
+    """Data prepared for visualization dashboard."""
+    generated_at: datetime
+    time_range_days: int
+    quality_over_time: List[Dict[str, Any]]
+    issue_distribution: Dict[str, int]
+    repair_progress: Dict[str, Any]
+    top_issues: List[Dict[str, Any]]
+    charts: Dict[str, Any]
+
+
+class ExtendedQualityReport(BaseModel):
+    """Comprehensive quality report with trend analysis."""
+    report_id: str
+    generated_at: datetime
+    time_range_start: datetime
+    time_range_end: datetime
+    overall_score: float
+    total_pages: int
+    total_issues: int
+    critical_issues: int
+    quality_trend: TrendDirection
+    issue_breakdown: Dict[str, int]
+    recommendations: List[str]
+    detailed_findings: List[str]
+    report_file_path: str
