@@ -108,3 +108,73 @@ class EnhancedConcept(BaseModel):
             raise ValueError("Confidence must be between 0 and 1")
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class SourceType(str, Enum):
+    """Types of sources"""
+    FILE = "file"
+    URL = "url"
+    TEXT = "text"
+
+
+class DocumentMetadata(BaseModel):
+    """Metadata for documents"""
+    title: str
+    tags: List[str] = Field(default_factory=list)
+    file_path: Optional[str] = None
+    url: Optional[str] = None
+    authors: List[str] = Field(default_factory=list)
+    date: Optional[datetime] = None
+
+
+class Relation(BaseModel):
+    """Relation between concepts"""
+    source: str
+    target: str
+    relation_type: str
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    evidence: List[str] = Field(default_factory=list)
+
+
+class EnhancedDocument(BaseModel):
+    """
+    Enhanced document model for document analysis
+
+    Represents a document with full feature support for concept extraction,
+    relation detection, and quality scoring
+    """
+
+    source_type: SourceType
+    content: str
+
+    # Metadata
+    metadata: DocumentMetadata
+
+    # Enhanced features
+    embeddings: Optional[np.ndarray] = Field(default=None)
+    concepts: List[EnhancedConcept] = Field(default_factory=list)
+    relations: List[Relation] = Field(default_factory=list)
+    quality_score: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    def add_concept(self, concept: EnhancedConcept) -> None:
+        """
+        Add a concept to this document
+
+        Args:
+            concept: EnhancedConcept instance
+        """
+        self.concepts.append(concept)
+
+    def find_concepts_by_type(self, concept_type: ConceptType) -> List[EnhancedConcept]:
+        """
+        Find all concepts of a specific type
+
+        Args:
+            concept_type: Type of concept to find
+
+        Returns:
+            List of concepts of the specified type
+        """
+        return [c for c in self.concepts if c.type == concept_type]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
