@@ -1802,6 +1802,304 @@ git commit -m "feat: implement PageWriter for wiki markdown files"
 
 ---
 
+#### Task 2.7: Implement IndexWriter
+
+**Files:**
+- Create: `src/wiki/writers/index_writer.py`
+- Create: `tests/test_wiki/test_index_writer.py`
+
+- [ ] **Step 1: Write the test**
+
+Create: `tests/test_wiki/test_index_writer.py`:
+```python
+import pytest
+import os
+from src.wiki.writers.index_writer import IndexWriter
+from src.wiki.models import WikiIndex, IndexEntry
+
+def test_update_index():
+    """Test updating wiki index"""
+    index = WikiIndex()
+
+    entry1 = IndexEntry(
+        page_id="concept1",
+        title="Machine Learning",
+        summary="A subset of AI"
+    )
+
+    entry2 = IndexEntry(
+        page_id="concept2",
+        title="Deep Learning",
+        summary="A type of ML"
+    )
+
+    index.add_entry("concepts", entry1)
+    index.add_entry("concepts", entry2)
+
+    writer = IndexWriter()
+    writer.update(index)
+
+    # Check file exists
+    assert os.path.exists("wiki/index.md")
+
+    # Check content
+    with open("wiki/index.md", "r") as f:
+        content = f.read()
+
+    assert "Machine Learning" in content
+    assert "Deep Learning" in content
+    assert "## Concepts" in content
+
+    # Cleanup
+    os.remove("wiki/index.md")
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run:
+```bash
+pytest tests/test_wiki/test_index_writer.py -v
+```
+
+Expected: FAIL with imports not found
+
+- [ ] **Step 3: Implement IndexWriter**
+
+Create: `src/wiki/writers/index_writer.py`:
+```python
+"""
+Index writing functionality for wiki
+"""
+
+import os
+from src.wiki.models import WikiIndex
+
+
+class IndexWriter:
+    """
+    Writes wiki index to disk
+    """
+
+    def update(self, index: WikiIndex, filepath: str = "wiki/index.md") -> str:
+        """
+        Update wiki index file
+
+        Args:
+            index: WikiIndex instance
+            filepath: Path to index file (default: wiki/index.md)
+
+        Returns:
+            Full path to written file
+        """
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+        # Convert to markdown
+        markdown_content = index.to_markdown()
+
+        # Write to disk
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(markdown_content)
+
+        return filepath
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run:
+```bash
+pytest tests/test_wiki/test_index_writer.py -v
+```
+
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/test_wiki/test_index_writer.py src/wiki/writers/index_writer.py
+git commit -m "feat: implement IndexWriter for wiki index.md"
+```
+
+---
+
+#### Task 2.8: Implement LogWriter
+
+**Files:**
+- Create: `src/wiki/writers/log_writer.py`
+- Create: `tests/test_wiki/test_log_writer.py`
+
+- [ ] **Step 1: Write the test**
+
+Create: `tests/test_wiki/test_log_writer.py`:
+```python
+import pytest
+import os
+from datetime import datetime
+from src.wiki.writers.log_writer import LogWriter
+from src.wiki.models import WikiUpdate, UpdateType
+
+def test_append_ingest_log():
+    """Test appending ingest log entry"""
+    log_entry = WikiUpdate(
+        timestamp=datetime.now(),
+        update_type=UpdateType.INGEST,
+        page_id="test-paper",
+        changes="Created new page from source",
+        parent_version=0
+    )
+
+    writer = LogWriter()
+    writer.append_ingest("raw/papers/test.md", ["test-paper"])
+
+    # Check file exists
+    assert os.path.exists("wiki/log.md")
+
+    # Check content
+    with open("wiki/log.md", "r") as f:
+        content = f.read()
+
+    assert "## [2026" in content  # Date format
+    assert "ingest" in content
+    assert "test-paper" in content
+
+    # Cleanup
+    os.remove("wiki/log.md")
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run:
+```bash
+pytest tests/test_wiki/test_log_writer.py -v
+```
+
+Expected: FAIL with imports not found
+
+- [ ] **Step 3: Implement LogWriter**
+
+Create: `src/wiki/writers/log_writer.py`:
+```python
+"""
+Log writing functionality for wiki
+"""
+
+import os
+from datetime import datetime
+from typing import List
+from src.wiki.models import WikiUpdate, UpdateType
+
+
+class LogWriter:
+    """
+    Writes wiki update log to disk
+    """
+
+    def append_ingest(self, source_path: str, page_ids: List[str]) -> None:
+        """
+        Append ingest operation to log
+
+        Args:
+            source_path: Path to ingested source
+            page_ids: List of page IDs that were created/updated
+        """
+        timestamp = datetime.now()
+        date_str = timestamp.strftime("%Y-%m-%d")
+        time_str = timestamp.strftime("%H:%M")
+
+        entry = f"""## [{date_str} {time_str}] ingest | {os.path.basename(source_path)}
+
+**Source:** {source_path}
+**Pages created/updated:** {len(page_ids)}
+**Page IDs:** {", ".join(page_ids)}
+
+"""
+
+        self._append_to_log(entry)
+
+    def append_query(self, question: str, page_id: str = None) -> None:
+        """
+        Append query operation to log
+
+        Args:
+            question: Query string
+            page_id: Page ID if new page was created (optional)
+        """
+        timestamp = datetime.now()
+        date_str = timestamp.strftime("%Y-%m-%d")
+        time_str = timestamp.strftime("%H:%M")
+
+        if page_id:
+            entry = f"""## [{date_str} {time_str}] query | {question[:50]}...
+
+**Question:** {question}
+**New page created:** {page_id}
+
+"""
+        else:
+            entry = f"""## [{date_str} {time_str}] query | {question[:50]}...
+
+**Question:** {question}
+
+"""
+
+        self._append_to_log(entry)
+
+    def append_lint(self, report) -> None:
+        """
+        Append lint operation to log
+
+        Args:
+            report: LintReport instance
+        """
+        timestamp = datetime.now()
+        date_str = timestamp.strftime("%Y-%m-%d")
+        time_str = timestamp.strftime("%H:%M")
+
+        entry = f"""## [{date_str} {time_str}] lint | Health check
+
+**Pages checked:** {report.total_pages}
+**Issues found:** {report.issues_found}
+**Issues fixed:** {report.issues_fixed}
+
+"""
+
+        self._append_to_log(entry)
+
+    def _append_to_log(self, entry: str) -> None:
+        """
+        Append entry to log file
+
+        Args:
+            entry: Log entry content
+        """
+        log_path = "wiki/log.md"
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+        # Append to log
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(entry)
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run:
+```bash
+pytest tests/test_wiki/test_log_writer.py -v
+```
+
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/test_wiki/test_log_writer.py src/wiki/writers/log_writer.py
+git commit -m "feat: implement LogWriter for wiki log.md with ingest/query/lint tracking"
+```
+
+---
+
 ## Week 3: Wiki Operations and Core Flows
 
 ### Day 11-12: Query Flow
