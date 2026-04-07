@@ -92,12 +92,10 @@ class DiscoveryOrchestrator:
         start_time = datetime.now()
 
         try:
-            # Convert documents to dict format for discovery engine
-            documents_dict = self._convert_documents_to_dict(documents)
-
-            # Execute discovery pipeline
+            # Execute discovery pipeline with EnhancedDocument objects
+            # The discovery engine expects EnhancedDocument objects, not dicts
             discovery_result = self.discovery_engine.discover(
-                documents=documents_dict,
+                documents=documents,
                 concepts=concepts,
                 relations=existing_relations
             )

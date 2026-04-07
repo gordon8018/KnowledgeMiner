@@ -1,14 +1,46 @@
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 
-def parse_frontmatter(content: str) -> Tuple[dict, str]:
+def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
     """Parse YAML frontmatter from markdown content."""
-    import frontmatter
+    try:
+        import frontmatter
+        post = frontmatter.loads(content)
+        metadata = dict(post.metadata) if post.metadata else {}
+        content = post.content
+        return metadata, content
+    except ImportError:
+        # Fallback: simple frontmatter parsing without frontmatter library
+        return _parse_frontmatter_simple(content)
 
-    post = frontmatter.loads(content)
-    metadata = dict(post.metadata)
-    content = post.content
-    return metadata, content
+def _parse_frontmatter_simple(content: str) -> Tuple[Dict[str, Any], str]:
+    """Simple frontmatter parsing fallback without frontmatter library."""
+    lines = content.split('\n')
+
+    if not content.startswith('---'):
+        return {}, content
+
+    # Find end of frontmatter
+    end_index = -1
+    for i in range(1, len(lines)):
+        if lines[i].strip() == '---':
+            end_index = i
+            break
+
+    if end_index == -1:
+        return {}, content
+
+    # Parse YAML frontmatter
+    frontmatter_lines = lines[1:end_index]
+    metadata = {}
+
+    for line in frontmatter_lines:
+        if ':' in line:
+            key, value = line.split(':', 1)
+            metadata[key.strip()] = value.strip()
+
+    content_without_frontmatter = '\n'.join(lines[end_index + 1:])
+    return metadata, content_without_frontmatter
 
 def parse_sections(content: str) -> List[dict]:
     """Parse markdown sections from content."""

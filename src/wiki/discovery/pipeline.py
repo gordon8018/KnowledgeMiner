@@ -112,8 +112,18 @@ class DiscoveryPipeline:
             last_full_run=last_full_run
         )
 
-        # Initialize discovery engine
-        self.discovery_engine = KnowledgeDiscoveryEngine(config=self.config)
+        # Initialize discovery engine with LLM provider and embedder
+        from src.integrations.llm_providers import get_llm_provider
+        from src.ml.embeddings import EmbeddingGenerator
+
+        llm_provider = get_llm_provider()
+        embedding_generator = EmbeddingGenerator()
+
+        self.discovery_engine = KnowledgeDiscoveryEngine(
+            config=self.config,
+            llm_provider=llm_provider,
+            embedding_generator=embedding_generator
+        )
 
         # Initialize orchestrator
         self.orchestrator = DiscoveryOrchestrator(

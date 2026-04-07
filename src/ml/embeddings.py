@@ -91,21 +91,17 @@ class EmbeddingGenerator:
             cache_max_size: Maximum size of embedding cache
 
         Raises:
-            ValueError: If OPENAI_API_KEY environment variable is not set
+            ValueError: If OPENAI_API_KEY environment variable is not set when needed
         """
-        # Check for API key
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
-
         self.model_name = model_name
         self.dimensions = dimensions
         self.batch_size = batch_size
         self.max_retries = max_retries
         self.cache = EmbeddingCache(max_size=cache_max_size)
 
-        # Initialize OpenAI client
-        self.client = openai.OpenAI(api_key=api_key)
+        # Delay client initialization until first use
+        self.client = None
+        self._client_initialized = False
 
     def _get_cache_key(self, text: str) -> str:
         """Generate cache key for text.
@@ -118,6 +114,22 @@ class EmbeddingGenerator:
         """
         return hashlib.md5(text.encode('utf-8')).hexdigest()
 
+    def _ensure_client(self):
+        """Ensure OpenAI client is initialized.
+
+        Raises:
+            ValueError: If OPENAI_API_KEY environment variable is not set
+        """
+        if not self._client_initialized:
+            # Check for API key
+            api_key = os.environ.get("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError("OPENAI_API_KEY environment variable is required for embedding generation")
+
+            # Initialize OpenAI client
+            self.client = openai.OpenAI(api_key=api_key)
+            self._client_initialized = True
+
     def generate_embedding(self, text: str) -> np.ndarray:
         """Generate embedding for a single text.
 
@@ -129,7 +141,11 @@ class EmbeddingGenerator:
 
         Raises:
             RuntimeError: If API call fails after max retries
+            ValueError: If OPENAI_API_KEY environment variable is not set
         """
+        # Ensure client is initialized
+        self._ensure_client()
+
         # Check cache first
         cache_key = self._get_cache_key(text)
         cached_embedding = self.cache.get(cache_key)

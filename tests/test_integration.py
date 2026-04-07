@@ -3,7 +3,7 @@ import tempfile
 import shutil
 import pytest
 from unittest.mock import Mock, patch
-from src.config import Config
+from src.compiler_config import Config
 from src.main import KnowledgeCompiler
 from src.models.document import Document
 from src.models.concept import Concept

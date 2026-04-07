@@ -247,15 +247,33 @@ class WikiStore:
 
         # Add files
         for file_path in files:
-            subprocess.run(
+            result = subprocess.run(
                 ["git", "add", file_path],
                 cwd=str(self.storage_path),
                 capture_output=True
             )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to git add {file_path}: {result.stderr.decode()}")
 
         # Commit
-        subprocess.run(
+        result = subprocess.run(
             ["git", "commit", "-m", message],
             cwd=str(self.storage_path),
             capture_output=True
         )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to git commit: {result.stderr.decode()}")
+
+    def __del__(self):
+        """Cleanup database connection when object is destroyed."""
+        if hasattr(self, 'conn') and self.conn is not None:
+            try:
+                self.conn.close()
+            except Exception:
+                pass  # Ignore errors during cleanup
+
+    def close(self):
+        """Explicitly close the database connection."""
+        if hasattr(self, 'conn') and self.conn is not None:
+            self.conn.close()
+            self.conn = None

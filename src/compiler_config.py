@@ -114,7 +114,7 @@ class Config:
             'max_file_size': self.max_file_size,
             'recursive_processing': self.recursive_processing,
             'file_patterns': self.file_patterns,
-            'api_key': self.api_key,
+            # Security: Never include api_key in serialized output
             'model_name': self.model_name,
             'temperature': self.temperature,
             'max_tokens': self.max_tokens,

@@ -3,7 +3,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-from src.config import Config
+from src.compiler_config import Config
 from src.analyzers.document_analyzer import DocumentAnalyzer
 from src.extractors.concept_extractor import ConceptExtractor
 from src.generators.article_generator import ArticleGenerator
@@ -558,25 +558,6 @@ Processed {stats['documents']['total']} documents and extracted {stats['concepts
                     print("\nOperation cancelled by user")
                     return confirmed
 
-        return confirmed
-
-    def _manual_edit_concepts(self, concepts: List[Concept]) -> List[Concept]:
-        """Manually edit concepts interactively.
-
-        Args:
-            concepts: List of concepts to edit
-
-        Returns:
-            List of edited concepts
-        """
-        if not self.config.interactive_mode:
-            return concepts
-
-        print("\nManual concept editing:")
-        print("-" * 30)
-
-        # Call confirm_concepts to let user select which concepts to keep
-        confirmed = self.confirm_concepts(concepts)
         return confirmed
 
     def _review_concepts_individually(self, concepts: List[Concept]) -> List[Concept]:

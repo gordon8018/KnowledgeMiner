@@ -13,7 +13,7 @@ from pathlib import Path
 # Add the src directory to the path so we can import modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
-from src.config import Config
+from src.compiler_config import Config
 from src.main import KnowledgeCompiler
 
 
@@ -190,7 +190,7 @@ def load_config(args) -> Config:
     config.source_dir = os.path.abspath(args.source_dir)
     config.output_dir = os.path.abspath(args.output)
 
-    if args.no_recursive:
+    if args.non_recursive:
         config.recursive_processing = False
 
     if args.no_summaries:

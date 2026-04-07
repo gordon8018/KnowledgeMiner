@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from src.config import Config
+from src.compiler_config import Config
 from src.main import KnowledgeCompiler
 from src.models.concept import Concept, ConceptType
 

@@ -254,7 +254,13 @@ This document provides a comprehensive summary of the compiled knowledge concept
 
         overview = f"- **Total Relations**: {relation_count}\n"
         overview += f"- **Concepts with Relations**: {concepts_with_relations}\n"
-        overview += f"- **Average Relations per Concept**: {relation_count / len(self.concepts):.2f}\n"
+
+        # Avoid division by zero
+        if len(self.concepts) > 0:
+            avg_relations = relation_count / len(self.concepts)
+            overview += f"- **Average Relations per Concept**: {avg_relations:.2f}\n"
+        else:
+            overview += "- **Average Relations per Concept**: N/A (no concepts)\n"
 
         return overview
 

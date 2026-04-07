@@ -359,9 +359,9 @@ class RelationMapper:
             markdown_lines.append(f"### {concept_name}")
             markdown_lines.append("")
 
-            # Add concept description if available
-            if hasattr(concept, 'description') and concept.description:
-                markdown_lines.append(f"**Description**: {concept.description}")
+            # Add concept definition if available
+            if hasattr(concept, 'definition') and concept.definition:
+                markdown_lines.append(f"**Definition**: {concept.definition}")
                 markdown_lines.append("")
 
             # Add sources
