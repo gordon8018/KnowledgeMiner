@@ -197,3 +197,36 @@ class EnhancedDocument(BaseModel):
         return [c for c in self.concepts if c.type == concept_type]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class DiscoveryType(str, Enum):
+    """Types of discoveries"""
+    PATTERN = "pattern"
+    GAP = "gap"
+    INSIGHT = "insight"
+    CONTRADICTION = "contradiction"
+
+
+class DiscoveryResult(BaseModel):
+    """
+    Knowledge discovery result
+
+    Represents a discovery made by the discovery engine including
+    patterns, gaps, insights, or contradictions
+    """
+
+    # Discovery type
+    result_type: DiscoveryType
+
+    # Content
+    summary: str
+    significance_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+
+    # Evidence
+    affected_concepts: List[str] = Field(default_factory=list)
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
+
+    # Metadata
+    discovered_at: datetime = Field(default_factory=datetime.now)
+    source_documents: List[str] = Field(default_factory=list)
