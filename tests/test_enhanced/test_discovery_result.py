@@ -33,3 +33,83 @@ def test_discovery_result_with_evidence():
     assert len(result.affected_concepts) == 2
     assert len(result.evidence) == 1
     assert result.evidence[0]["source"] == "doc1.md"
+
+def test_discovery_result_empty_summary_validation():
+    """Test that empty summary is rejected"""
+    with pytest.raises(ValueError, match="summary must not be empty"):
+        DiscoveryResult(
+            result_type=DiscoveryType.PATTERN,
+            summary="   "
+        )
+
+def test_discovery_result_whitespace_only_summary():
+    """Test that whitespace-only summary is rejected"""
+    with pytest.raises(ValueError, match="summary must not be empty"):
+        DiscoveryResult(
+            result_type=DiscoveryType.PATTERN,
+            summary=""
+        )
+
+def test_discovery_result_score_bounds():
+    """Test score validation at boundaries"""
+    result = DiscoveryResult(
+        result_type=DiscoveryType.PATTERN,
+        summary="Test",
+        significance_score=0.0,
+        confidence=1.0
+    )
+    assert result.significance_score == 0.0
+    assert result.confidence == 1.0
+
+def test_discovery_result_add_evidence():
+    """Test adding evidence via helper method"""
+    result = DiscoveryResult(
+        result_type=DiscoveryType.PATTERN,
+        summary="Test discovery"
+    )
+    result.add_evidence("doc1.md", "Evidence quote")
+
+    assert len(result.evidence) == 1
+    assert result.evidence[0]["source"] == "doc1.md"
+    assert "added_at" in result.evidence[0]
+
+def test_discovery_result_add_evidence_validation():
+    """Test add_evidence rejects empty values"""
+    result = DiscoveryResult(
+        result_type=DiscoveryType.PATTERN,
+        summary="Test"
+    )
+
+    with pytest.raises(ValueError, match="Source cannot be empty"):
+        result.add_evidence("", "Quote")
+
+    with pytest.raises(ValueError, match="Quote cannot be empty"):
+        result.add_evidence("doc.md", "")
+
+def test_discovery_result_add_affected_concept():
+    """Test adding affected concepts with duplicate prevention"""
+    result = DiscoveryResult(
+        result_type=DiscoveryType.PATTERN,
+        summary="Test"
+    )
+
+    result.add_affected_concept("concept1")
+    result.add_affected_concept("concept2")
+    result.add_affected_concept("concept1")  # Duplicate
+
+    assert len(result.affected_concepts) == 2
+    assert "concept1" in result.affected_concepts
+
+def test_discovery_result_add_source_document():
+    """Test adding source documents with duplicate prevention"""
+    result = DiscoveryResult(
+        result_type=DiscoveryType.PATTERN,
+        summary="Test"
+    )
+
+    result.add_source_document("doc1.md")
+    result.add_source_document("doc2.md")
+    result.add_source_document("doc1.md")  # Duplicate
+
+    assert len(result.source_documents) == 2
+    assert "doc1.md" in result.source_documents

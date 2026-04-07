@@ -230,3 +230,32 @@ class DiscoveryResult(BaseModel):
     # Metadata
     discovered_at: datetime = Field(default_factory=datetime.now)
     source_documents: List[str] = Field(default_factory=list)
+
+    @field_validator('summary')
+    @classmethod
+    def summary_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('summary must not be empty')
+        return v
+
+    def add_evidence(self, source: str, quote: str) -> None:
+        """Add evidence with validation"""
+        if not source or not source.strip():
+            raise ValueError("Source cannot be empty")
+        if not quote or not quote.strip():
+            raise ValueError("Quote cannot be empty")
+        self.evidence.append({
+            "source": source,
+            "quote": quote,
+            "added_at": datetime.now().isoformat()
+        })
+
+    def add_affected_concept(self, concept_name: str) -> None:
+        """Add affected concept with duplicate prevention"""
+        if concept_name and concept_name not in self.affected_concepts:
+            self.affected_concepts.append(concept_name)
+
+    def add_source_document(self, doc_id: str) -> None:
+        """Add source document with duplicate prevention"""
+        if doc_id and doc_id not in self.source_documents:
+            self.source_documents.append(doc_id)
