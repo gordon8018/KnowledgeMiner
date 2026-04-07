@@ -1,3 +1,1 @@
-"""Knowledge Compiler for Investment Trading Documents."""
-
-__version__ = "1.0.0"
+"""KnowledgeMiner 4.0 - Three-layer architecture for knowledge management"""
