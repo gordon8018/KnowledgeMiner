@@ -109,9 +109,85 @@ class BrokenLinkDetector:
         return broken_links
 
 
-def lint_wiki() -> LintReport:
+class FrontmatterDetector:
+    """
+    Detects pages missing frontmatter
+    """
+
+    def find(self, page_paths: List[str]) -> List[str]:
+        """
+        Find pages missing frontmatter
+
+        Args:
+            page_paths: List of page file paths
+
+        Returns:
+            List of page IDs missing frontmatter
+        """
+        pages_missing = []
+
+        for page_path in page_paths:
+            if not os.path.exists(page_path):
+                continue
+
+            page_id = os.path.basename(page_path).replace(".md", "")
+
+            with open(page_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Check if page starts with YAML frontmatter
+            if not content.strip().startswith("---"):
+                pages_missing.append(page_id)
+
+        return pages_missing
+
+
+class EmptyPageDetector:
+    """
+    Detects empty or near-empty pages
+    """
+
+    def find(self, page_paths: List[str], min_content_length: int = 50) -> List[str]:
+        """
+        Find empty or near-empty pages
+
+        Args:
+            page_paths: List of page file paths
+            min_content_length: Minimum content length (characters)
+
+        Returns:
+            List of page IDs with insufficient content
+        """
+        empty_pages = []
+
+        for page_path in page_paths:
+            if not os.path.exists(page_path):
+                continue
+
+            page_id = os.path.basename(page_path).replace(".md", "")
+
+            with open(page_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Remove YAML frontmatter from content check
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                if len(parts) >= 3:
+                    content = parts[2].strip()
+
+            # Check content length
+            if len(content) < min_content_length:
+                empty_pages.append(page_id)
+
+        return empty_pages
+
+
+def lint_wiki(auto_fix: bool = False) -> LintReport:
     """
     Lint the wiki and generate a report
+
+    Args:
+        auto_fix: If True, attempt to auto-fix issues
 
     Returns:
         LintReport with findings
@@ -125,9 +201,6 @@ def lint_wiki() -> LintReport:
     fixes = []
     recommendations = []
 
-    # Check for orphans
-    detector = OrphanDetector()
-
     # Build page paths for all directories
     page_paths = []
     for page_id in all_pages:
@@ -138,8 +211,9 @@ def lint_wiki() -> LintReport:
                 page_paths.append(path)
                 break
 
-    orphans = detector.find(page_paths)
-
+    # Check for orphans
+    orphan_detector = OrphanDetector()
+    orphans = orphan_detector.find(page_paths)
     for orphan in orphans:
         issues.append(f"Orphan page: {orphan}")
         recommendations.append(f"Consider adding links to [[{orphan}]] from related pages")
@@ -147,11 +221,44 @@ def lint_wiki() -> LintReport:
     # Check for broken links
     broken_detector = BrokenLinkDetector()
     broken_links = broken_detector.find(page_paths, all_pages)
-
     for page_id, links in broken_links.items():
         for link in links:
             issues.append(f"Broken link in {page_id}: [[{link}]]")
             recommendations.append(f"Create page for {link} or remove link")
+
+    # Check for missing frontmatter
+    frontmatter_detector = FrontmatterDetector()
+    missing_frontmatter = frontmatter_detector.find(page_paths)
+    for page_id in missing_frontmatter:
+        issues.append(f"Missing frontmatter: {page_id}")
+        recommendations.append(f"Add YAML frontmatter to {page_id}")
+
+        # Auto-fix: Add basic frontmatter
+        if auto_fix:
+            page_path = None
+            for directory in ["entities", "concepts", "sources", "synthesis", "comparisons"]:
+                path = f"wiki/{directory}/{page_id}.md"
+                if os.path.exists(path):
+                    page_path = path
+                    break
+
+            if page_path:
+                with open(page_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                # Add basic frontmatter
+                frontmatter = f"---\ntitle: {page_id.replace('_', ' ').title()}\ncreated: {__import__('datetime').datetime.now().strftime('%Y-%m-%d')}\n---\n\n{content}"
+                with open(page_path, "w", encoding="utf-8") as f:
+                    f.write(frontmatter)
+
+                fixes.append(f"Added frontmatter to {page_id}")
+
+    # Check for empty pages
+    empty_detector = EmptyPageDetector()
+    empty_pages = empty_detector.find(page_paths)
+    for page_id in empty_pages:
+        issues.append(f"Empty or near-empty page: {page_id}")
+        recommendations.append(f"Add content to {page_id}")
 
     return LintReport(
         total_pages=len(all_pages),
