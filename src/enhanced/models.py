@@ -4,7 +4,6 @@ These models are used in the processing layer for knowledge extraction and disco
 """
 
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
 import numpy as np
@@ -61,7 +60,17 @@ class EnhancedConcept(BaseModel):
             source: Source document identifier
             quote: Relevant quote from source
             confidence: Confidence of this evidence (0-1)
+
+        Raises:
+            ValueError: If confidence is not in [0,1] or source/quote are empty
         """
+        if not source or not source.strip():
+            raise ValueError("Source cannot be empty")
+        if not quote or not quote.strip():
+            raise ValueError("Quote cannot be empty")
+        if not 0.0 <= confidence <= 1.0:
+            raise ValueError("Confidence must be between 0 and 1")
+
         evidence_entry = {
             "source": source,
             "quote": quote,
@@ -76,7 +85,13 @@ class EnhancedConcept(BaseModel):
 
         Args:
             concept_name: Name of related concept
+
+        Raises:
+            ValueError: If concept_name is empty or only whitespace
         """
+        if not concept_name or not concept_name.strip():
+            raise ValueError("Concept name cannot be empty")
+
         if concept_name not in self.relations:
             self.relations.append(concept_name)
 

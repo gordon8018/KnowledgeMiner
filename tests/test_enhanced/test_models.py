@@ -164,3 +164,47 @@ def test_enhanced_concept_duplicate_relation_prevention():
     concept.add_relation("Concept2")
 
     assert concept.relations.count("Concept2") == 1
+
+def test_enhanced_concept_add_evidence_validation_empty_source():
+    """Test add_evidence rejects empty source"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    with pytest.raises(ValueError, match="Source cannot be empty"):
+        concept.add_evidence("", "Quote", 0.9)
+
+def test_enhanced_concept_add_evidence_validation_empty_quote():
+    """Test add_evidence rejects empty quote"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    with pytest.raises(ValueError, match="Quote cannot be empty"):
+        concept.add_evidence("source.md", "", 0.9)
+
+def test_enhanced_concept_add_evidence_validation_invalid_confidence():
+    """Test add_evidence rejects invalid confidence"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    with pytest.raises(ValueError, match="Confidence must be between 0 and 1"):
+        concept.add_evidence("source.md", "Quote", 1.5)
+
+def test_enhanced_concept_add_relation_validation_empty():
+    """Test add_relation rejects empty concept name"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    with pytest.raises(ValueError, match="Concept name cannot be empty"):
+        concept.add_relation("")
