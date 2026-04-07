@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from datetime import datetime
-from src.enhanced.models import EnhancedConcept, ConceptType
+from src.enhanced.models import EnhancedConcept, ConceptType, TemporalInfo
 
 def test_enhanced_concept_creation():
     """Test creating an EnhancedConcept"""
@@ -72,3 +72,95 @@ def test_enhanced_concept_update_confidence():
     concept.update_confidence(0.9)
 
     assert concept.confidence == 0.9
+
+def test_enhanced_concept_confidence_validation_too_high():
+    """Test confidence validation rejects values > 1.0"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test",
+        confidence=0.5
+    )
+
+    with pytest.raises(ValueError, match="Confidence must be between 0 and 1"):
+        concept.update_confidence(1.5)
+
+def test_enhanced_concept_confidence_validation_too_low():
+    """Test confidence validation rejects values < 0.0"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test",
+        confidence=0.5
+    )
+
+    with pytest.raises(ValueError, match="Confidence must be between 0 and 1"):
+        concept.update_confidence(-0.1)
+
+def test_enhanced_concept_evidence_timestamp():
+    """Test evidence includes added_at timestamp"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    concept.add_evidence("source1.md", "Quote", 0.9)
+
+    assert "added_at" in concept.evidence[0]
+    assert isinstance(concept.evidence[0]["added_at"], str)
+
+def test_enhanced_concept_temporal_info():
+    """Test TemporalInfo fields"""
+    from datetime import datetime
+
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test",
+        temporal_info=TemporalInfo(
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+    )
+
+    assert concept.temporal_info is not None
+    assert concept.temporal_info.created_at is not None
+    assert concept.temporal_info.updated_at is not None
+
+def test_enhanced_concept_source_documents():
+    """Test source_documents attribute"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test",
+        source_documents=["doc1.md", "doc2.md"]
+    )
+
+    assert len(concept.source_documents) == 2
+    assert "doc1.md" in concept.source_documents
+
+def test_enhanced_concept_properties():
+    """Test properties dictionary"""
+    concept = EnhancedConcept(
+        name="Test",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    concept.properties["key1"] = "value1"
+
+    assert concept.properties["key1"] == "value1"
+
+def test_enhanced_concept_duplicate_relation_prevention():
+    """Test adding duplicate relation doesn't create duplicate"""
+    concept = EnhancedConcept(
+        name="Concept1",
+        type=ConceptType.ABSTRACT,
+        definition="Test"
+    )
+
+    concept.add_relation("Concept2")
+    concept.add_relation("Concept2")
+
+    assert concept.relations.count("Concept2") == 1

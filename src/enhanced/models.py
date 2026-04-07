@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ConceptType(str, Enum):
@@ -92,5 +92,4 @@ class EnhancedConcept(BaseModel):
         else:
             raise ValueError("Confidence must be between 0 and 1")
 
-    class Config:
-        arbitrary_types_allowed = True  # Allow np.ndarray
+    model_config = ConfigDict(arbitrary_types_allowed=True)
