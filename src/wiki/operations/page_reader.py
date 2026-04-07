@@ -3,13 +3,13 @@ Page reading functionality for wiki
 """
 
 import os
-import re
 import yaml
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
 
 from src.wiki.models import WikiPage, PageType
+from src.wiki.constants import WIKILINK_PATTERN, FRONTMATTER_PATTERN, WIKI_DIRECTORIES, MARKDOWN_EXTENSION
 
 
 class PageReadError(Exception):
@@ -29,9 +29,7 @@ class PageReader:
     - Validating required fields
     """
 
-    # Compile regex patterns for better performance
-    FRONTMATTER_PATTERN = re.compile(r"^---\n([\s\S]*?)\n?---\n([\s\S]*)$")
-    WIKILINK_PATTERN = re.compile(r"\[\[([^\]]+)\]\]")
+    # Use shared regex patterns from constants module
 
     # Required fields for WikiPage
     REQUIRED_FIELDS = {"id", "title", "page_type", "content"}
@@ -44,13 +42,7 @@ class PageReader:
             wiki_root: Root directory of wiki (default: "wiki")
         """
         self.wiki_root = wiki_root
-        self.search_paths = [
-            os.path.join(wiki_root, "entities"),
-            os.path.join(wiki_root, "concepts"),
-            os.path.join(wiki_root, "sources"),
-            os.path.join(wiki_root, "synthesis"),
-            os.path.join(wiki_root, "comparisons")
-        ]
+        self.search_paths = [os.path.join(wiki_root, directory) for directory in WIKI_DIRECTORIES]
 
     def read(self, page_id: str) -> WikiPage:
         """
@@ -96,7 +88,7 @@ class PageReader:
         Returns:
             Full path to page file, or None if not found
         """
-        filename = f"{page_id}.md"
+        filename = f"{page_id}{MARKDOWN_EXTENSION}"
 
         for search_path in self.search_paths:
             filepath = os.path.join(search_path, filename)
@@ -274,8 +266,8 @@ class PageReader:
         for search_path in self.search_paths:
             if os.path.exists(search_path):
                 for filename in os.listdir(search_path):
-                    if filename.endswith(".md"):
-                        page_id = filename[:-3]  # Remove .md
+                    if filename.endswith(MARKDOWN_EXTENSION):
+                        page_id = filename[:-len(MARKDOWN_EXTENSION)]  # Remove .md
                         page_ids.append(page_id)
 
         return sorted(page_ids)

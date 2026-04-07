@@ -21,6 +21,7 @@ from src.wiki.writers.log_writer import LogWriter
 from src.wiki.operations.page_reader import PageReader
 from src.wiki.operations.index_searcher import IndexSearcher
 from src.wiki.operations.lint import lint_wiki
+from src.wiki.constants import WIKI_DIRECTORIES
 from src.enhanced.models import EnhancedDocument, DocumentMetadata, SourceType
 from src.wiki.models import WikiPage, PageType
 
@@ -87,9 +88,11 @@ class KnowledgeMinerOrchestrator:
         source_pages = []
 
         # Process each source
+        total_sources = len(source_paths)
         for i, source_path in enumerate(source_paths, 1):
             try:
-                print(f"[{i}/{len(source_paths)}] Processing {os.path.basename(source_path)}...")
+                progress = (i / total_sources) * 100
+                print(f"[{i}/{total_sources}] ({progress:.1f}%) Processing {os.path.basename(source_path)}...")
 
                 # Load and parse
                 source = self.loader.load(source_path)
@@ -142,10 +145,15 @@ class KnowledgeMinerOrchestrator:
                 stats["errors"].append(error_msg)
 
         # Write concept pages (unique only)
-        print(f"\nWriting {len(all_concepts)} concept pages...")
+        total_concepts = len(all_concepts)
+        print(f"\nWriting {total_concepts} concept pages...")
 
         seen_concepts = set()
-        for concept in all_concepts:
+        for i, concept in enumerate(all_concepts, 1):
+            if i % 10 == 0 or i == total_concepts:
+                progress = (i / total_concepts) * 100
+                print(f"  Progress: {i}/{total_concepts} ({progress:.1f}%)")
+
             concept_id = concept.name.lower().replace(" ", "_").replace("\n", "_")
 
             # Sanitize ID
