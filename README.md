@@ -1,44 +1,60 @@
-# KnowledgeMiner 2.0
+# KnowledgeMiner 3.0
 
-A comprehensive system for converting raw markdown documents into structured knowledge bases with automatic concept extraction, categorization, relationship mapping, and intelligent knowledge discovery.
+A comprehensive intelligent knowledge accumulation system that transforms static markdown documents into a dynamic, self-maintaining Wiki with automatic concept extraction, relationship discovery, insight generation, and continuous quality assurance.
 
 ## 🎯 Project Overview
 
-KnowledgeMiner 2.0 is an intelligent knowledge mining system featuring modular architecture, enhanced data models, LLM integration, and semantic search capabilities. Phase 1 establishes a robust foundation with pluggable components, while Phase 2 adds advanced knowledge discovery and insight generation.
+KnowledgeMiner 3.0 is a next-generation knowledge management system that goes beyond one-time analysis to create a living knowledge base. It automatically processes documents, discovers insights, backfills findings to historical content, and maintains Wiki quality through intelligent monitoring and repair.
 
 ## ✨ Features
 
-### Core Features
-- **Document Analysis**: Parse and structure markdown documents with frontmatter
-- **Concept Extraction**: Automatically identify and extract key concepts from content
-- **Intelligent Indexing**: Organize documents by categories and relationships
-- **Content Generation**: Generate summaries, articles, and backlinks from extracted concepts
-- **Interactive Review**: Review and confirm extracted concepts interactively
-- **Flexible Configuration**: Extensive configuration options for customization
-- **Error Handling**: Robust error handling and logging throughout the pipeline
+### 🔄 Wiki Knowledge Management
+- **Persistent Wiki Storage**: Version-controlled knowledge base with complete history tracking
+- **Automatic Maintenance**: Self-maintaining Wiki that updates as new documents arrive
+- **Batch Processing**: Efficient daily/weekly scheduled processing of new documents
+- **Incremental Updates**: Smart hybrid mode selects optimal update strategy automatically
+- **Wiki Organization**: Topic-based structure with automatic categorization and tagging
 
-### Phase 1 Enhancements
-- **Enhanced Data Models**: New core models with better type safety and validation
-- **LLM Integration**: Support for OpenAI, Anthropic Claude, and local models (Ollama)
-- **Embedding Generation**: Automatic semantic embeddings for concepts and documents
-- **State Management**: Persistent state tracking for incremental compilation
-- **Modular Architecture**: Pluggable components with clear interfaces
-- **Improved Performance**: 82% test coverage with optimized processing pipelines
+### 🧠 Intelligent Knowledge Discovery
+- **Relation Mining**: Discover explicit, implicit, statistical, and semantic relationships between concepts
+- **Pattern Detection**: Identify temporal, causal, evolutionary, and conflict patterns in knowledge
+- **Gap Analysis**: Automatically find missing concepts, relations, and evidence
+- **Insight Generation**: Generate actionable insights with multi-dimensional priority scoring
+- **Semantic Search**: Full-text and semantic search across all Wiki content
 
-### Phase 2: Knowledge Discovery Engine (New!)
-- **Intelligent Relation Mining**: Discover explicit, implicit, statistical, and semantic relationships
-- **Pattern Detection**: Identify temporal, causal, evolutionary, and conflict patterns
-- **Gap Analysis**: Find missing concepts, relations, and evidence in your knowledge base
-- **Insight Generation**: Generate actionable insights with significance scoring
-- **Interactive Exploration**: Query your knowledge base with natural language
-- **Comprehensive Testing**: 117 tests with full coverage of discovery features
+### 💡 Smart Insight Management
+- **Automatic Backfilling**: Intelligently propagate new insights to relevant historical pages
+- **Priority Scoring**: Multi-dimensional assessment (novelty × impact × actionability)
+- **Smart Propagation**: Direct propagation to affected pages (max 2 hops) with cycle detection
+- **Queue Management**: Priority-based backfill with immediate (P0) and batch queues
+- **Impact Analysis**: Assess which pages need updates when new insights emerge
 
-### Phase 2: Code Review & Security Improvements (April 2025)
-- **Security Hardening**: Path traversal vulnerability eliminated, API key protection implemented
-- **Performance Optimization**: 50% reduction in file I/O, O(n²) → O(n) algorithm improvements
-- **Architecture Enhancement**: Dependency injection pattern for better testability
-- **Cache Optimization**: Proper LRU cache implementation with OrderedDict
-- **Comprehensive Validation**: 6 validation tests for all fixes (100% passing)
+### 🔍 Quality Assurance System
+- **Health Monitoring**: Continuous monitoring of Wiki quality with comprehensive health checks
+- **Consistency Checking**: Validate internal, cross-reference, and temporal consistency
+- **Issue Classification**: Intelligent triage of issues (critical/important/minor)
+- **Staged Repair**: Gradual automation from manual → semi-auto → full auto repairs
+- **Quality Metrics**: Track health scores, issue distribution, and quality trends
+
+### 🔒 Security & Performance
+- **Path Traversal Protection**: All file operations validated to prevent attacks
+- **API Key Security**: Automatic redaction of sensitive credentials in error messages
+- **Content Caching**: 50% reduction in file I/O through intelligent caching
+- **Algorithm Optimization**: O(n²) → O(n) complexity improvements for scalability
+- **Dependency Injection**: Modular architecture for better testability and maintainability
+
+### 🤖 LLM Integration
+- **Multi-Provider Support**: OpenAI, Anthropic Claude, and local models (Ollama)
+- **Semantic Embeddings**: Automatic generation of concept and document embeddings
+- **AI-Assisted Review**: Interactive concept confirmation with LLM assistance
+- **Smart Generation**: LLM-powered summaries, articles, and backlink generation
+
+### 📊 Document Analysis
+- **Automatic Extraction**: Parse and structure markdown documents with frontmatter
+- **Concept Identification**: Extract key concepts, definitions, criteria, and examples
+- **Relationship Mapping**: Map complex relationships between concepts
+- **Categorization**: Intelligent organization by categories and tags
+- **Confidence Scoring**: Assess extraction quality with confidence metrics
 
 ## Installation
 
@@ -196,14 +212,56 @@ results = compiler.run_interactive_session()
 # Review concepts manually
 confirmed_concepts = compiler.review_concepts(extracted_concepts)
 
-# Phase 1: Enhanced with LLM assistance
+# Enhanced with LLM assistance
 config.interactive_mode = True
 config.llm.provider = "anthropic"  # Use Claude for interactive assistance
 compiler = KnowledgeCompiler(config)
 results = compiler.run_interactive_session()
 ```
 
-### Phase 2: Knowledge Discovery
+### Phase 3: Wiki Knowledge Management
+
+```python
+from src.wiki import WikiSystem, WikiConfig
+from src.discovery import KnowledgeDiscoveryEngine, DiscoveryConfig
+
+# Create Wiki configuration
+config = WikiConfig.profile_production()  # Pre-configured production settings
+config.wiki_storage_path = "./wiki_storage"
+config.batch_schedule = "0 2 * * *"  # Daily at 2am
+config.enable_backfill = True
+config.auto_repair_stage = 2  # Semi-automatic repairs
+
+# Initialize Wiki system
+wiki = WikiSystem(config)
+
+# Initial Wiki build from existing documents
+wiki.build_from_directory(
+    source_dir="./documents",
+    mode="full"  # Full analysis for initial build
+)
+
+# Add new documents incrementally
+wiki.add_documents(
+    new_docs=["./documents/new_article.md"],
+    mode="hybrid"  # Smart mode selection
+)
+
+# Query the Wiki
+results = wiki.search("machine learning algorithms")
+topic_page = wiki.get_topic("Reinforcement Learning")
+concept_info = wiki.get_concept("Q-Learning")
+
+# Access Wiki history
+version_history = wiki.get_history("Reinforcement Learning")
+old_version = wiki.get_version("Reinforcement Learning", version=5)
+
+# Monitor Wiki quality
+health_report = wiki.get_health_report()
+quality_metrics = wiki.get_quality_metrics()
+```
+
+### Knowledge Discovery with Wiki Integration
 
 ```python
 from src.discovery import (
@@ -211,9 +269,6 @@ from src.discovery import (
     InteractiveDiscovery,
     DiscoveryConfig
 )
-from src.core.concept_model import EnhancedConcept, ConceptType
-from src.core.document_model import EnhancedDocument
-from src.core.relation_model import Relation
 
 # Create discovery configuration
 config = DiscoveryConfig(
@@ -243,6 +298,9 @@ print(f"Detected {len(result.patterns)} patterns")
 print(f"Found {len(result.gaps)} gaps")
 print(f"Generated {len(result.insights)} insights")
 
+# Integrate with Wiki for automatic updates
+wiki.update_from_discovery(result)
+
 # Interactive exploration
 interactive = InteractiveDiscovery(engine)
 interactive.discover_and_store(documents, concepts, relations)
@@ -265,7 +323,37 @@ answer = interactive.ask_question(
 )
 ```
 
-For a complete working example, see `examples/discovery_example.py`.
+### Wiki Quality Management
+
+```python
+from src.wiki.quality import QualitySystem
+
+# Initialize quality system
+quality_system = QualitySystem(wiki)
+
+# Run health check
+health_report = quality_system.run_health_check()
+print(f"Health Score: {health_report.overall_score}/100")
+print(f"Critical Issues: {len(health_report.critical_issues)}")
+print(f"Important Issues: {len(health_report.important_issues)}")
+
+# Review and repair issues
+repair_queue = quality_system.get_repair_queue()
+for issue in repair_queue.critical:
+    print(f"Critical: {issue.description}")
+    # Manual review and approval
+    if quality_system.propose_repair(issue):
+        quality_system.apply_repair(issue)
+
+# Get quality trends
+trends = quality_system.get_quality_trends()
+print(f"Quality Trend: {trends.direction}")  # improving/stable/declining
+```
+
+For complete working examples, see:
+- `examples/wiki_example.py` - Wiki management
+- `examples/discovery_example.py` - Knowledge discovery
+- `examples/quality_example.py` - Quality assurance
 
 ## Configuration Options
 
@@ -345,76 +433,81 @@ config = Config.from_dict(config_data)
 
 ## Architecture
 
-### Phase 1 Architecture
+### System Architecture
 
-The Knowledge Compiler 2.0 features a modular, layered architecture:
+KnowledgeMiner 3.0 features a modular, four-component architecture designed for persistent knowledge accumulation:
 
-#### Core Layer (Phase 1 New)
-- **Base Models**: Abstract base classes for all domain models
-- **Document Model**: Enhanced document representation with validation
-- **Concept Model**: Rich concept model with flexible attributes
-- **Relation Model**: Sophisticated relationship mapping between concepts
-- **State Manager**: Persistent state tracking for incremental compilation
-- **Configuration**: Hierarchical configuration with validation
+#### 🗄️ WikiCore - Knowledge Storage Foundation
+- **WikiStore**: Unified storage for topics, concepts, and relations
+- **VersionLog**: Complete version history with Git integration
+- **KnowledgeGraph**: NetworkX-based graph operations
+- **QueryEngine**: Full-text search (Whoosh) and semantic queries
+- **Immutable Storage**: Append-only writes for data integrity
 
-#### Integration Layer (Phase 1 New)
-- **LLM Providers**: Unified interface for OpenAI, Anthropic, and Ollama
-- **Embeddings**: Semantic embedding generation for concepts and documents
-- **Retry Logic**: Automatic retry with exponential backoff
-- **Error Handling**: Comprehensive error handling and recovery
+#### 🔍 DiscoveryPipeline 2.0 - Intelligent Discovery Engine
+- **InputProcessor**: Detect new, changed, and deleted documents
+- **ModeSelector**: Smart selection between full/incremental/hybrid modes
+- **DiscoveryOrchestrator**: Integrate relation mining, pattern detection, gap analysis
+- **WikiIntegrator**: Direct Wiki updates with transaction safety
 
-#### Processing Layer
-- **Analyzers**:
-  - **DocumentAnalyzer**: Parses and structures markdown documents
-  - **HashCalculator**: Creates unique identifiers for documents
+#### 💡 InsightManager - Insight Lifecycle Management
+- **InsightReceiver**: Collect, deduplicate, and index insights
+- **PriorityScorer**: Multi-dimensional scoring (novelty, impact, actionability)
+- **BackfillScheduler**: Priority-based queue management (P0-P3)
+- **BackfillExecutor**: Smart backfilling to affected pages
+- **InsightPropagator**: Direct propagation with cycle detection
 
-- **Extractors**:
-  - **ConceptExtractor**: Identifies and extracts key concepts
-  - Uses pattern matching and AI analysis
-  - Supports multiple concept types (terms, indicators, strategies, etc.)
+#### 🛡️ QualitySystem - Wiki Health Guardian
+- **HealthMonitor**: Consistency, quality, and staleness detection
+- **IssueClassifier**: Intelligent triage (critical/important/minor)
+- **Staged Repair System**: Gradual automation (manual → semi-auto → auto)
+- **QualityReporter**: Metrics, trends, and improvement suggestions
 
-- **Generators**:
-  - **ArticleGenerator**: Creates detailed articles from concepts
-  - **SummaryGenerator**: Generates document summaries
-  - **BacklinkGenerator**: Creates cross-references between concepts
+### Document Processing Layer
 
-- **Indexers**:
-  - **FileIndexer**: Manages document lookup and organization
-  - **CategoryIndexer**: Organizes documents by categories and tags
-  - **RelationMapper**: Maps relationships between concepts
+#### Analyzers
+- **DocumentAnalyzer**: Parse and structure markdown documents with frontmatter
+- **HashCalculator**: Create unique identifiers for change detection
 
-#### Utilities
-- **FileOps**: Essential file operations and markdown discovery
-- **MarkdownUtils**: Markdown parsing and processing utilities
+#### Extractors
+- **ConceptExtractor**: Identify and extract key concepts with pattern matching
+- **RelationMiner**: Discover explicit, implicit, statistical, and semantic relations
+- **PatternDetector**: Identify temporal, causal, evolutionary, and conflict patterns
+- **GapAnalyzer**: Find missing concepts, relations, and evidence
+- **InsightGenerator**: Generate actionable insights with significance scoring
 
-### Phase 2: Code Review Architecture Improvements (April 2025)
+#### Generators
+- **ArticleGenerator**: Create detailed articles from concepts
+- **SummaryGenerator**: Generate document summaries
+- **BacklinkGenerator**: Create cross-references between concepts
 
-The code review introduced several architectural enhancements:
+### Integration Layer
 
-#### Security Enhancements
-- **Path Validation**: All file operations now validate paths to prevent traversal attacks
-- **API Key Redaction**: Sensitive credentials automatically redacted from error messages
+#### LLM Providers
+- **OpenAI Integration**: GPT models for text generation and analysis
+- **Anthropic Integration**: Claude models for advanced reasoning
+- **Local Models**: Ollama support for privacy and cost control
+- **Unified Interface**: Consistent API across all providers
+
+#### Embeddings & Search
+- **Semantic Embeddings**: Vector representations for concepts and documents
+- **Full-Text Search**: Whoosh-based search with highlighting
+- **Semantic Search**: Vector similarity search with embeddings
+- **Graph Navigation**: NetworkX for relationship traversal
+
+### Security & Quality
+
+#### Security Features
+- **Path Validation**: All file operations validated to prevent traversal attacks
+- **API Key Protection**: Automatic redaction of sensitive credentials
 - **Input Sanitization**: Comprehensive validation on all user inputs
+- **Transaction Safety**: ACID guarantees for Wiki updates
 
 #### Performance Optimizations
-- **Content Caching**: Documents are read once and cached, eliminating redundant I/O
-- **Algorithm Optimization**: String operations improved from O(n²) to O(n) complexity
-- **Cache Efficiency**: Proper LRU cache implementation using `collections.OrderedDict`
-
-#### Code Quality Improvements
-- **Dependency Injection**: `KnowledgeCompiler` supports component injection for better testability
-- **Modular Design**: Components can be swapped or mocked for testing
-- **Maintainability**: Clear separation of concerns and reduced coupling
-
-```python
-# Example: Dependency injection in action
-from src.main import KnowledgeCompiler
-from src.analyzers.document_analyzer import DocumentAnalyzer
-
-# Inject custom analyzer for testing
-mock_analyzer = DocumentAnalyzer()
-compiler = KnowledgeCompiler(document_analyzer=mock_analyzer)
-```
+- **Content Caching**: Documents read once and cached (50% I/O reduction)
+- **Algorithm Optimization**: O(n²) → O(n) complexity improvements
+- **LRU Cache**: Proper cache eviction with OrderedDict
+- **Batch Processing**: Efficient handling of large document sets
 
 ## Data Models
 
@@ -641,297 +734,185 @@ for concept in concepts:
 
 ### Test Coverage
 
-The project maintains comprehensive test coverage:
+KnowledgeMiner 3.0 maintains comprehensive test coverage across all components:
 
 ```bash
 # Run all tests
 pytest
 
-# Run specific test file
-pytest tests/test_integration.py
+# Run specific test suites
+pytest tests/test_core/           # WikiCore tests (80+ tests)
+pytest tests/test_discovery/      # DiscoveryPipeline tests (80+ tests)
+pytest tests/test_insight/        # InsightManager tests (90+ tests)
+pytest tests/test_quality/        # QualitySystem tests (55+ tests)
+pytest tests/test_integration/    # End-to-end tests (30+ tests)
+pytest tests/test_resilience/     # Resilience tests (60+ tests)
 
 # Run with coverage
 pytest --cov=src --cov-report=term-missing
 
-# Run Phase 2 code review validation tests
+# Run security validation tests
 python test_phase2_review_fixes.py
 ```
 
-### Phase 2 Test Statistics
+### Test Statistics
 
-- **Total Coverage**: 85%+ (comprehensive discovery module coverage)
-- **Test Count**: 117 tests for discovery features (all passing)
-- **Discovery Components**: 90-100% coverage
-- **Integration Tests**: End-to-end discovery pipeline validated
+- **Total Coverage**: 85%+ across all modules
+- **Test Count**: 395+ tests (all passing)
+- **WikiCore**: 80+ tests with full coverage
+- **DiscoveryPipeline**: 80+ tests covering all modes
+- **InsightManager**: 90+ tests for backfilling and propagation
+- **QualitySystem**: 55+ tests for health monitoring and repairs
+- **Resilience**: 60+ tests for chaos engineering and scalability
+- **Security Validation**: 6/6 tests passing (100%)
 
-### Code Review Validation Tests (April 2025)
+### Test Categories
 
-- **Security Tests**: Path traversal attack prevention (2/2 tests passing)
-- **Performance Tests**: Redundant I/O elimination, O(n²) → O(n) optimization verified
-- **Quality Tests**: API key protection, dependency injection, LRU cache implementation
-- **Overall Results**: 6/6 validation tests passing (100%)
-- **Regression Tests**: All existing functionality preserved
+**Unit Tests**: Individual component testing
+- Storage engine operations
+- Discovery algorithms
+- Insight scoring and propagation
+- Quality checks and repairs
 
-## Development Status
+**Integration Tests**: End-to-end workflows
+- Document processing → Wiki updates
+- Insight discovery → Backfilling → Propagation
+- Quality monitoring → Issue detection → Repair
 
-### Current Status: Phase 2 Complete with Security Hardening ✅
+**Resilience Tests**: Production readiness
+- Crash recovery and data corruption
+- Concurrent access and race conditions
+- Large-scale performance (10,000+ pages)
+- Migration and rollback scenarios
 
-**Phase 1: Foundation and Core Enhancements** (Completed)
-- ✅ Enhanced data models with validation
-- ✅ LLM provider integration (OpenAI, Anthropic, Ollama)
-- ✅ Embedding generation for semantic search
-- ✅ State management for incremental compilation
-- ✅ Comprehensive test coverage (82%)
-- ✅ Documentation updates
-
-**Phase 2: Knowledge Discovery Engine** (Completed)
-- ✅ Intelligent relation mining (explicit, implicit, statistical, semantic)
-- ✅ Pattern detection (temporal, causal, evolutionary, conflict)
-- ✅ Gap analysis (concepts, relations, evidence)
-- ✅ Insight generation with significance scoring
-- ✅ Interactive exploration API
-- ✅ 117 comprehensive tests (all passing)
-- ✅ Complete documentation and examples
-
-**Phase 2: Code Review & Security Improvements** (Completed - April 2025)
-- ✅ Security: Path traversal vulnerability eliminated (HIGH priority)
-- ✅ Security: API key exposure prevention in error messages (MEDIUM priority)
-- ✅ Performance: 50% reduction in file I/O operations (HIGH priority)
-- ✅ Performance: O(n²) → O(n) algorithm optimization (MEDIUM priority)
-- ✅ Architecture: Dependency injection for better testability (MEDIUM priority)
-- ✅ Performance: Proper LRU cache implementation (MEDIUM priority)
-- ✅ 6 validation tests created and passing (100%)
-- ✅ Comprehensive documentation in `docs/Phase2_Code_Review_Fixes_Summary.md`
-
-### Upcoming Phases
-
-**Phase 3: Production Hardening** (Planned)
-- Scalability improvements
-- Monitoring and metrics
-- Deployment automation
-- Advanced error handling
-- Additional performance optimizations
-
-## Migration Guide
-
-### From Legacy to Phase 1
-
-#### Configuration Migration
-
-**Old approach:**
-```python
-from src.config import Config
-
-config = Config(
-    api_key="key",
-    model_name="gpt-3.5-turbo",
-    temperature=0.7
-)
-```
-
-**New approach:**
-```python
-from src.core.config import get_config
-
-config = get_config()
-config.llm.api_key = "key"
-config.llm.model = "gpt-4"
-config.llm.temperature = 0.7
-```
-
-#### Data Model Migration
-
-**Old approach:**
-```python
-from src.models.document import Document
-from src.models.concept import Concept
-```
-
-**New approach:**
-```python
-from src.core.document_model import Document
-from src.core.concept_model import Concept
-
-# Enhanced models include:
-# - Validation methods
-# - Embedding support
-# - Better serialization
-```
-
-#### Adding LLM Integration
-
-```python
-# Before: No LLM support
-compiler = KnowledgeCompiler()
-
-# After: With LLM
-config = get_config()
-config.llm.provider = "openai"
-config.llm.model = "gpt-4"
-compiler = KnowledgeCompiler(config)
-```
-
-#### Adding Embeddings
-
-```python
-# Enable embeddings
-config.embeddings.enabled = True
-config.embeddings.model = "text-embedding-ada-002"
-
-# Concepts will now have semantic embeddings
-concepts = compiler.extracted_concepts
-for concept in concepts:
-    if concept.embedding is not None:
-        print(f"{concept.name} has embedding vector")
-```
-
-### From Phase 1 to Phase 2
-
-#### Adding Knowledge Discovery
-
-```python
-# Phase 1: Basic compilation
-from src.main import KnowledgeCompiler
-from src.core.config import get_config
-
-config = get_config()
-compiler = KnowledgeCompiler(config)
-results = compiler.compile()
-documents = compiler.processed_documents
-concepts = compiler.extracted_concepts
-
-# Phase 2: Add knowledge discovery
-from src.discovery import KnowledgeDiscoveryEngine, DiscoveryConfig
-
-discovery_config = DiscoveryConfig(
-    enable_explicit_mining=True,
-    enable_implicit_mining=True,
-    enable_statistical_mining=True,
-    enable_semantic_mining=True
-)
-
-discovery_engine = KnowledgeDiscoveryEngine(
-    config=discovery_config,
-    llm_provider=compiler.llm_provider,  # Reuse LLM from compiler
-    embedding_generator=compiler.embedding_generator  # Reuse embedder
-)
-
-# Run discovery on compiled knowledge
-discovery_result = discovery_engine.discover(
-    documents=documents,
-    concepts=concepts,
-    relations=compiler.extracted_relations  # Existing relations
-)
-
-# Access discoveries
-print(f"Discovered {len(discovery_result.relations)} new relations")
-print(f"Detected {len(discovery_result.patterns)} patterns")
-print(f"Found {len(discovery_result.gaps)} knowledge gaps")
-print(f"Generated {len(discovery_result.insights)} insights")
-```
-
-#### Interactive Knowledge Exploration
-
-```python
-# Phase 2: Add interactive exploration
-from src.discovery import InteractiveDiscovery
-
-interactive = InteractiveDiscovery(discovery_engine)
-interactive.discover_and_store(documents, concepts, relations)
-
-# Explore your knowledge base interactively
-momentum_relations = interactive.explore_relations("Momentum")
-trading_patterns = interactive.find_patterns("trading strategy")
-technical_gaps = interactive.analyze_gaps_in_domain("technical analysis")
-
-# Get top insights
-top_insights = interactive.get_top_insights(10)
-
-# Ask natural language questions
-answer = interactive.ask_question(
-    "What are the most common patterns in momentum trading strategies?"
-)
-```
-
-#### Integrating with Existing Workflow
-
-```python
-# Complete Phase 1 + Phase 2 workflow
-from src.main import KnowledgeCompiler
-from src.discovery import KnowledgeDiscoveryEngine, InteractiveDiscovery
-from src.core.config import get_config
-
-# Step 1: Compile documents (Phase 1)
-config = get_config()
-config.source_dir = "./docs"
-config.output_dir = "./output"
-
-compiler = KnowledgeCompiler(config)
-compilation_result = compiler.compile()
-
-# Step 2: Discover knowledge (Phase 2)
-discovery_config = DiscoveryConfig()
-discovery_engine = KnowledgeDiscoveryEngine(discovery_config)
-discovery_result = discovery_engine.discover(
-    documents=compiler.processed_documents,
-    concepts=compiler.extracted_concepts
-)
-
-# Step 3: Explore interactively (Phase 2)
-interactive = InteractiveDiscovery(discovery_engine)
-interactive.discover_and_store(
-    documents=compiler.processed_documents,
-    concepts=compiler.extracted_concepts
-)
-
-# Now you have a complete, explorable knowledge base!
-```
+**Security Tests**: Vulnerability prevention
+- Path traversal attack prevention
+- API key protection in error messages
+- Input validation and sanitization
 
 ## Performance
 
-### Phase 1 Benchmarks
+### Benchmarks
 
-- **Document Processing**: ~100ms per document
-- **Concept Extraction**: ~200ms per document
-- **Embedding Generation**: ~500ms per 100 concepts (batch)
-- **State Persistence**: ~50ms per save
-- **Test Suite**: ~20 seconds for 429 tests
+**Document Processing**:
+- Document analysis: ~100ms per document
+- Concept extraction: ~200ms per document
+- Embedding generation: ~500ms per 100 concepts (batch)
+- State persistence: ~50ms per save
 
-### Phase 2 Benchmarks
+**Knowledge Discovery**:
+- Relation mining: ~500ms per 100 concepts
+- Pattern detection: ~300ms per 100 concepts
+- Gap analysis: ~200ms per 100 concepts
+- Insight generation: ~1s per 100 insights (with LLM)
 
-- **Relation Mining**: ~500ms per 100 concepts
-- **Pattern Detection**: ~300ms per 100 concepts
-- **Gap Analysis**: ~200ms per 100 concepts
-- **Insight Generation**: ~1s per 100 insights (with LLM)
-- **Full Discovery Pipeline**: ~2-3s for 100 documents
-- **Discovery Test Suite**: ~15 seconds for 117 tests
+**Wiki Operations**:
+- Full analysis (100 documents): ~5 minutes
+- Incremental update (10 documents): ~30 seconds
+- Wiki query response: <1 second
+- Backfill processing: ~1 hour for P0 insights
 
-### Code Review Performance Improvements (April 2025)
-
-- **File I/O**: 50% reduction in redundant disk operations (cached content usage)
-- **String Operations**: O(n²) → O(n) complexity in relation lookups
-- **Cache Efficiency**: Proper LRU implementation improves hit rates
-- **Overall Impact**: Faster concept extraction and better scalability
+**Quality Assurance**:
+- Health check (1000 pages): ~2 minutes
+- Consistency validation: ~30 seconds
+- Auto-repair (low-risk): ~5 seconds per issue
 
 ### Scalability
 
-- Tested with up to 1000 documents
-- Handles documents up to 10MB
+- Tested with up to 10,000 Wiki pages
+- Supports 100,000+ concept entries
+- Handles 1,000,000+ relation records
+- Processes batches of 1,000+ documents
 - Efficient memory usage with streaming
 - Incremental compilation reduces reprocessing
-- Discovery engine scales linearly with concept count
-- Batch processing for large knowledge bases
-- **Security**: Path validation prevents unauthorized file access
-- **Architecture**: Dependency injection enables better testing and modularity
+
+### Optimizations
+
+**I/O Performance**:
+- 50% reduction in file operations through content caching
+- Lazy loading of Wiki pages
+- Batch processing for large updates
+
+**Algorithm Efficiency**:
+- O(n²) → O(n) complexity in relation lookups
+- Proper LRU cache implementation
+- Smart mode selection (full vs incremental)
+
+**Database Performance**:
+- Indexed queries on all metadata fields
+- Connection pooling for concurrent access
+- Transaction batching for bulk updates
 
 ## Contributing
 
+We welcome contributions to KnowledgeMiner 3.0! Here's how to get started:
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/gordon8018/KnowledgeMiner.git
+cd KnowledgeMiner
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Install in editable mode
+pip install -e .
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src --cov-report=html
+
+# Run specific test suite
+pytest tests/test_wiki/test_core/
+```
+
+### Code Style
+
+- Follow PEP 8 style guidelines
+- Use type hints for all functions
+- Write docstrings for all modules, classes, and functions
+- Add tests for new functionality (aim for >85% coverage)
+
+### Submitting Changes
+
 1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Write tests for your changes
+4. Ensure all tests pass: `pytest`
+5. Commit your changes: `git commit -m "feat: add amazing feature"`
+6. Push to the branch: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+### Reporting Issues
+
+When reporting bugs or requesting features:
+- Use clear, descriptive titles
+- Provide minimal reproduction cases for bugs
+- Include environment details (OS, Python version)
+- Search existing issues first
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- **Phase 1 Foundation**: Enhanced data models, LLM integration, embeddings
+- **Phase 2 Discovery**: Intelligent relation mining, pattern detection, insight generation
+- **Phase 3 Wiki System**: Persistent knowledge accumulation, quality assurance, automation
+- **Security Hardening**: Comprehensive code review and vulnerability fixes
+
+Built with ❤️ for intelligent knowledge management.
