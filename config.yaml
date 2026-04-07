@@ -1,0 +1,74 @@
+# KnowledgeMiner 4.0 Configuration
+
+# Directory Structure
+directories:
+  raw: "raw"
+  wiki: "output"
+
+# Source Categories
+categories:
+  - papers
+  - articles
+  - reports
+  - notes
+
+# Wiki Configuration
+wiki:
+  # Wiki subdirectories
+  subdirs:
+    - entities
+    - concepts
+    - sources
+    - synthesis
+    - comparisons
+
+  # Page settings
+  max_content_length: 10000
+  default_page_type: "concept"
+
+# Extraction Settings
+extraction:
+  # Minimum confidence for concepts
+  min_confidence: 0.3
+
+  # Maximum concepts per document
+  max_concepts: 100
+
+  # Concept types to extract
+  types:
+    - entity
+    - concept
+    - relationship
+
+# Discovery Settings
+discovery:
+  # Pattern detection threshold
+  pattern_threshold: 3
+
+  # Gap analysis threshold
+  gap_threshold: 0.5
+
+  # Insight generation
+  enable_insights: true
+
+# Lint Settings
+lint:
+  # Minimum content length for pages
+  min_content_length: 50
+
+  # Enable auto-fix
+  auto_fix: false
+
+# Migration Settings
+migration:
+  # Source directory to migrate from
+  source_dir: "output"
+
+  # Target directory
+  target_dir: "raw"
+
+  # Classify sources
+  classify: true
+
+  # Add frontmatter
+  add_frontmatter: true
