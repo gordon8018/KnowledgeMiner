@@ -8,7 +8,7 @@ log aggregation systems and monitoring tools.
 import logging
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone  # BUGFIX: LOW #1 - add timezone import
 from typing import Any, Dict, Optional
 from contextlib import contextmanager
 from pathlib import Path
@@ -67,7 +67,7 @@ class StructuredLogger:
         """Format log entry with context."""
         log_entry = {
             "message": message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": kwargs.get("level", "INFO"),
             **self._context,
             **kwargs
@@ -139,7 +139,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),

@@ -17,6 +17,7 @@ from src.models.document import Document, Section
 from src.models.concept import Concept, ConceptType
 from src.core.exceptions import (
     KnowledgeCompilerError,
+    DocumentError,
     DocumentNotFoundError,
     DocumentParseError,
     ProcessingError,

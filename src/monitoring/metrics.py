@@ -8,7 +8,7 @@ histogram, and summary metric types.
 import time
 from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # BUGFIX: LOW #1 - add timezone
 from collections import defaultdict
 import threading
 
@@ -317,7 +317,7 @@ class MetricsRegistry:
     def export_metrics(self) -> Dict[str, Any]:
         """Export all metrics as dictionary."""
         export = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "counters": {},
             "gauges": {},
             "histograms": {},

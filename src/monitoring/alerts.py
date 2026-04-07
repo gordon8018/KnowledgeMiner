@@ -9,7 +9,7 @@ import time
 import smtplib
 from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # BUGFIX: LOW #1 - add timezone
 from enum import Enum
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -136,7 +136,7 @@ class AlertManager:
         if not rule.enabled:
             return None
 
-        current_time = current_time or datetime.utcnow()
+        current_time = current_time or datetime.now(timezone.utc)
 
         # Check if condition is met
         condition_met = self._check_condition(
@@ -371,7 +371,7 @@ Alert ID: {alert.id}
             if alert_id in self.active_alerts:
                 alert = self.active_alerts[alert_id]
                 alert.status = AlertStatus.ACKNOWLEDGED
-                alert.acknowledged_at = datetime.utcnow()
+                alert.acknowledged_at = datetime.now(timezone.utc)
                 alert.metadata["acknowledged_by"] = acknowledged_by
                 logger.info(f"Alert {alert_id} acknowledged by {acknowledged_by}")
 
@@ -381,7 +381,7 @@ Alert ID: {alert.id}
             if alert_id in self.active_alerts:
                 alert = self.active_alerts[alert_id]
                 alert.status = AlertStatus.RESOLVED
-                alert.resolved_at = datetime.utcnow()
+                alert.resolved_at = datetime.now(timezone.utc)
                 del self.active_alerts[alert_id]
                 logger.info(f"Alert {alert_id} resolved")
 

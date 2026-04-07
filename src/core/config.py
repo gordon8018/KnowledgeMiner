@@ -86,8 +86,8 @@ class LoggingConfig(BaseSettings):
     rotation: str = "daily"
 
 
-class Config:
-    """Main configuration class"""
+class KnowledgeCompilerConfig:
+    """Main configuration class (BUGFIX: HIGH #3 - renamed to avoid conflict with src.compiler_config.Config)"""
 
     def __init__(self, config_dict: Optional[Dict[str, Any]] = None):
         """Initialize configuration"""
@@ -105,7 +105,7 @@ class Config:
             self.logging = LoggingConfig()
 
     @classmethod
-    def from_yaml(cls, config_path: Path) -> "Config":
+    def from_yaml(cls, config_path: Path) -> "KnowledgeCompilerConfig":
         """Load configuration from YAML file"""
         import yaml
 
@@ -130,15 +130,15 @@ class Config:
 
 
 # Global configuration instance
-_config: Optional[Config] = None
+_config: Optional[KnowledgeCompilerConfig] = None
 
 
-def get_config(config_path: Optional[Path] = None) -> Config:
+def get_config(config_path: Optional[Path] = None) -> KnowledgeCompilerConfig:
     """Get global configuration instance"""
     global _config
     if _config is None:
         if config_path and config_path.exists():
-            _config = Config.from_yaml(config_path)
+            _config = KnowledgeCompilerConfig.from_yaml(config_path)
         else:
-            _config = Config()
+            _config = KnowledgeCompilerConfig()
     return _config

@@ -80,11 +80,14 @@ class WikiStore:
         # Initialize .git if not exists
         git_dir = self.storage_path / ".git"
         if not git_dir.exists():
-            subprocess.run(
+            result = subprocess.run(
                 ["git", "init"],
                 cwd=str(self.storage_path),
                 capture_output=True
             )
+            # BUGFIX: LOW #2 - Check git init return code
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to initialize git repository: {result.stderr.decode()}")
 
     def _get_page_dir(self, page_type: PageType) -> Path:
         """Get directory for a page type."""
@@ -191,8 +194,11 @@ class WikiStore:
         if not existing:
             raise ValueError(f"Page {page.id} does not exist")
 
-        # Increment version
+        # Save old state for rollback (BUGFIX: MEDIUM - save both version and updated_at)
         old_version = page.version
+        old_updated_at = page.updated_at
+
+        # Increment version
         new_version = page.increment_version()
 
         # Update file
@@ -203,9 +209,10 @@ class WikiStore:
         try:
             self._git_commit(f"Update page: {page.id}", [str(file_path.relative_to(self.storage_path))])
         except RuntimeError as e:
-            # Git failed - rollback file and re-raise
+            # Git failed - rollback file and page state
             file_path.write_text(existing.content)  # Restore original content
             page.version = old_version  # Restore version
+            page.updated_at = old_updated_at  # BUGFIX: Restore updated_at
             raise e
 
         # Git succeeded - now update database
@@ -238,21 +245,26 @@ class WikiStore:
         if not page:
             return False
 
-        # Get file path before deleting
+        # Get file path
         file_path = self._get_page_path(page_id, page.page_type)
         relative_path = str(file_path.relative_to(self.storage_path))
 
-        # Git commit FIRST (easier to rollback if it fails) (BUGFIX: NEW #3)
-        # Note: Git needs the file to exist to add the deletion
+        # Delete file FIRST (BUGFIX: CRITICAL - so git add stages the deletion)
+        # When file exists: git add stages content
+        # When file doesn't exist: git add stages deletion
+        if file_path.exists():
+            file_path.unlink()
+
+        # Git commit (git add will stage the deletion since file doesn't exist)
         try:
             self._git_commit(f"Delete page: {page_id}", [relative_path])
         except RuntimeError as e:
-            # Git failed - don't delete file or DB, just re-raise
-            raise e
-
-        # Git succeeded - now delete file and database
-        if file_path.exists():
-            file_path.unlink()
+            # Git failed - we already deleted the file
+            # Log the error but continue with DB deletion (DB is the source of truth)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Git commit failed for page deletion: {e}")
+            # Continue with DB deletion since file is already deleted
 
         # Delete from database
         self.conn.execute("DELETE FROM pages WHERE id = ?", (page_id,))

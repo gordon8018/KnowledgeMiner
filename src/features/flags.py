@@ -13,7 +13,7 @@ import json
 import hashlib
 from typing import Dict, List, Any, Optional, Set
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone  # BUGFIX: LOW #1 - add timezone
 from pathlib import Path
 import random
 
@@ -170,7 +170,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.enabled = True
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def disable_flag(self, flag_name: str):
@@ -180,7 +180,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.enabled = False
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def set_rollout_percentage(self, flag_name: str, percentage: float):
@@ -193,7 +193,7 @@ class FeatureFlagManager:
             raise ValueError(f"Percentage must be between 0 and 100, got {percentage}")
 
         flag.rollout_percentage = percentage
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def add_to_whitelist(self, flag_name: str, user_id: str):
@@ -203,7 +203,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.whitelist.add(user_id)
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def remove_from_whitelist(self, flag_name: str, user_id: str):
@@ -213,7 +213,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.whitelist.discard(user_id)
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def add_to_blacklist(self, flag_name: str, user_id: str):
@@ -223,7 +223,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.blacklist.add(user_id)
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def remove_from_blacklist(self, flag_name: str, user_id: str):
@@ -233,7 +233,7 @@ class FeatureFlagManager:
             raise ValueError(f"Flag {flag_name} not found")
 
         flag.blacklist.discard(user_id)
-        flag.updated_at = datetime.utcnow()
+        flag.updated_at = datetime.now(timezone.utc)
         self._save_flags()
 
     def get_flag(self, flag_name: str) -> Optional[FeatureFlag]:

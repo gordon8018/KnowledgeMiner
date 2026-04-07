@@ -336,7 +336,7 @@ class TestRelationMapper:
         concept1 = Mock(spec=Concept)
         concept1.name = "Python"
         concept1.related_concepts = ["Programming", "Algorithms"]
-        concept1.description = "A programming language"
+        concept1.definition = "A programming language"
 
         concept2 = Mock(spec=Concept)
         concept2.name = "Programming"

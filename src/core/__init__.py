@@ -10,7 +10,7 @@ from src.core.base_models import (
 )
 
 from src.core.config import (
-    Config,
+    KnowledgeCompilerConfig,  # BUGFIX: HIGH #3 - renamed from Config
     LLMConfig,
     StorageConfig,
     ProcessingConfig,
@@ -47,7 +47,7 @@ __all__ = [
     "SourceType",
     "ProcessingStatus",
     # Configuration (Task 2)
-    "Config",
+    "KnowledgeCompilerConfig",  # BUGFIX: HIGH #3 - renamed from Config
     "LLMConfig",
     "StorageConfig",
     "ProcessingConfig",

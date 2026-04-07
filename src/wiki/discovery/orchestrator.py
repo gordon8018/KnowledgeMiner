@@ -138,39 +138,10 @@ class DiscoveryOrchestrator:
             logger.error(f"Error during discovery orchestration: {e}", exc_info=True)
             raise
 
-    def _convert_documents_to_dict(
-        self,
-        documents: List[EnhancedDocument]
-    ) -> List[Dict[str, Any]]:
-        """
-        Convert EnhancedDocument objects to dict format.
-
-        Args:
-            documents: List of EnhancedDocument objects
-
-        Returns:
-            List of document dictionaries
-        """
-        documents_dict = []
-        for doc in documents:
-            # Handle both enum and string source_type
-            source_type = (
-                doc.source_type.value
-                if hasattr(doc.source_type, 'value')
-                else doc.source_type
-            )
-
-            doc_dict = {
-                'id': doc.id,
-                'title': doc.metadata.title or doc.id,
-                'content': doc.content,
-                'source': doc.metadata.file_path or 'unknown',
-                'source_type': source_type,
-                'quality_score': doc.quality_score
-            }
-            documents_dict.append(doc_dict)
-
-        return documents_dict
+    # DEAD CODE REMOVAL (BUGFIX: MEDIUM #2)
+    # Removed _convert_documents_to_dict() method (33 lines) - was never called
+    # The orchestrate() method now passes EnhancedDocument objects directly to
+    # KnowledgeDiscoveryEngine, which handles them correctly
 
     def get_statistics(self, result: DiscoveryResult) -> Dict[str, Any]:
         """

@@ -7,7 +7,7 @@ time series data, alert summaries, and system health metrics.
 
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # BUGFIX: LOW #1 - add timezone
 from collections import defaultdict
 import statistics
 
@@ -78,7 +78,7 @@ class DashboardGenerator:
         unit: str = ""
     ):
         """Add data point to time series."""
-        timestamp = timestamp or datetime.utcnow()
+        timestamp = timestamp or datetime.now(timezone.utc)
 
         if series_name not in self.time_series_data:
             self.time_series_data[series_name] = TimeSeries(
@@ -120,8 +120,8 @@ class DashboardGenerator:
             return TimeSeries(name=series_name, description="", unit="")
 
         series = self.time_series_data[series_name]
-        start_time = start_time or (datetime.utcnow() - timedelta(hours=24))
-        end_time = end_time or datetime.utcnow()
+        start_time = start_time or (datetime.now(timezone.utc) - timedelta(hours=24))
+        end_time = end_time or datetime.now(timezone.utc)
 
         # Filter by time range
         filtered_points = [
@@ -223,7 +223,7 @@ class DashboardGenerator:
         """
         dashboard_data = {
             "dashboard_type": dashboard_type,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "time_series": [],
             "stats": {},
             "alerts": {}
