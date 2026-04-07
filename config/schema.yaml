@@ -1,0 +1,4 @@
+# KnowledgeMiner 4.0 Configuration Schema
+# This will be populated with actual configuration in later tasks
+
+version: "4.0"
