@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 from enum import Enum
 from datetime import datetime
 import numpy as np
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class ConceptType(str, Enum):
@@ -126,6 +126,13 @@ class DocumentMetadata(BaseModel):
     authors: List[str] = Field(default_factory=list)
     date: Optional[datetime] = None
 
+    @field_validator('title')
+    @classmethod
+    def title_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('title must not be empty')
+        return v
+
 
 class Relation(BaseModel):
     """Relation between concepts"""
@@ -156,13 +163,25 @@ class EnhancedDocument(BaseModel):
     relations: List[Relation] = Field(default_factory=list)
     quality_score: float = Field(default=0.5, ge=0.0, le=1.0)
 
+    @field_validator('content')
+    @classmethod
+    def content_must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('content must not be empty')
+        return v
+
     def add_concept(self, concept: EnhancedConcept) -> None:
         """
         Add a concept to this document
 
         Args:
             concept: EnhancedConcept instance
+
+        Raises:
+            TypeError: If concept is not an EnhancedConcept instance
         """
+        if not isinstance(concept, EnhancedConcept):
+            raise TypeError("concept must be an EnhancedConcept instance")
         self.concepts.append(concept)
 
     def find_concepts_by_type(self, concept_type: ConceptType) -> List[EnhancedConcept]:
