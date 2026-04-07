@@ -4,6 +4,7 @@ import os
 import hashlib
 import time
 from typing import List, Optional, Dict, Any
+from collections import OrderedDict
 import numpy as np
 import openai
 
@@ -17,7 +18,8 @@ class EmbeddingCache:
         Args:
             max_size: Maximum number of embeddings to store in cache
         """
-        self._cache: Dict[str, np.ndarray] = {}
+        # PERFORMANCE FIX: MEDIUM #5 - Use OrderedDict for proper LRU eviction
+        self._cache: OrderedDict[str, np.ndarray] = OrderedDict()
         self.max_size = max_size
 
     def get(self, key: str) -> Optional[np.ndarray]:
@@ -29,7 +31,11 @@ class EmbeddingCache:
         Returns:
             Cached embedding or None if not found
         """
-        return self._cache.get(key)
+        # Move to end to mark as recently used (LRU behavior)
+        if key in self._cache:
+            self._cache.move_to_end(key)
+            return self._cache[key]
+        return None
 
     def put(self, key: str, embedding: np.ndarray) -> None:
         """Store embedding in cache.
@@ -38,13 +44,14 @@ class EmbeddingCache:
             key: Cache key (hash of text)
             embedding: Embedding vector to cache
         """
-        # Evict oldest entries if cache is full
+        # Evict oldest entry if cache is full
         if len(self._cache) >= self.max_size and key not in self._cache:
-            # Remove first (oldest) entry
-            oldest_key = next(iter(self._cache))
-            del self._cache[oldest_key]
+            # Pop first (oldest/least-recently-used) entry
+            self._cache.popitem(last=False)
 
         self._cache[key] = embedding
+        # Move to end to mark as recently used
+        self._cache.move_to_end(key)
 
     def clear(self) -> None:
         """Clear all cached embeddings."""
@@ -126,9 +133,18 @@ class EmbeddingGenerator:
             if not api_key:
                 raise ValueError("OPENAI_API_KEY environment variable is required for embedding generation")
 
-            # Initialize OpenAI client
-            self.client = openai.OpenAI(api_key=api_key)
-            self._client_initialized = True
+            # SECURITY FIX: MEDIUM #1 - Prevent API key exposure in error messages
+            # Store only the key (not the full API key) for debugging
+            self._api_key_prefix = api_key[:8] + "..." if len(api_key) > 8 else "***"
+
+            try:
+                # Initialize OpenAI client
+                self.client = openai.OpenAI(api_key=api_key)
+                self._client_initialized = True
+            except Exception as e:
+                # Redact API key from error messages
+                error_msg = str(e).replace(api_key, self._api_key_prefix)
+                raise RuntimeError(f"Failed to initialize OpenAI client: {error_msg}") from e
 
     def generate_embedding(self, text: str) -> np.ndarray:
         """Generate embedding for a single text.

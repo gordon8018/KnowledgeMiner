@@ -163,8 +163,16 @@ class ConceptExtractor:
         Returns:
             List of concepts with the specified relation
         """
-        return [concept for concept in self.concepts
-                if concept.related_concepts and relation.lower() in str(concept.related_concepts)]
+        # PERFORMANCE FIX: MEDIUM #2 - Optimize O(n²) string operations
+        # Instead of converting to string and using 'in', directly check the list
+        relation_lower = relation.lower()
+
+        return [
+            concept for concept in self.concepts
+            if concept.related_concepts and
+               any(relation_lower == related_concept.lower()
+                   for related_concept in concept.related_concepts)
+        ]
 
     def clear_concepts(self):
         """

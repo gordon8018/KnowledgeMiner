@@ -59,16 +59,38 @@ def copy_file(source: str, destination: str) -> bool:
         return False
 
 
-def write_file(file_path: str, content: str) -> bool:
+def write_file(file_path: str, content: str, base_dir: str = None) -> bool:
     """Write content to a file.
 
     Args:
         file_path: Path to the file
         content: Content to write
+        base_dir: Base directory for path validation (defaults to current directory)
 
     Returns:
         True if write successful, False otherwise
+
+    Raises:
+        ValueError: If file_path contains path traversal sequences
     """
+    # SECURITY FIX: HIGH #1 - Prevent path traversal attacks
+    # Validate file_path doesn't contain path traversal sequences
+    if '..' in file_path or file_path.startswith('/'):
+        # If relative path contains .. or absolute path, validate against base_dir
+        if base_dir is None:
+            base_dir = os.getcwd()
+
+        # Convert to absolute paths and validate
+        abs_file_path = os.path.abspath(os.path.join(base_dir, file_path))
+        abs_base_dir = os.path.abspath(base_dir)
+
+        # Ensure file_path is within base_dir
+        if not abs_file_path.startswith(abs_base_dir):
+            raise ValueError(f"Path traversal detected: {file_path} is outside base directory")
+
+        # Use sanitized absolute path
+        file_path = abs_file_path
+
     try:
         # Ensure parent directory exists
         parent_dir = os.path.dirname(file_path)
@@ -82,15 +104,34 @@ def write_file(file_path: str, content: str) -> bool:
         return False
 
 
-def read_file(file_path: str) -> Optional[str]:
+def read_file(file_path: str, base_dir: str = None) -> Optional[str]:
     """Read content from a file.
 
     Args:
         file_path: Path to the file
+        base_dir: Base directory for path validation (defaults to current directory)
 
     Returns:
         File content as string if successful, None otherwise
+
+    Raises:
+        ValueError: If file_path contains path traversal sequences
     """
+    # SECURITY FIX: HIGH #1 - Prevent path traversal attacks
+    if '..' in file_path or file_path.startswith('/'):
+        if base_dir is None:
+            base_dir = os.getcwd()
+
+        # Convert to absolute paths and validate
+        abs_file_path = os.path.abspath(os.path.join(base_dir, file_path))
+        abs_base_dir = os.path.abspath(base_dir)
+
+        # Ensure file_path is within base_dir
+        if not abs_file_path.startswith(abs_base_dir):
+            raise ValueError(f"Path traversal detected: {file_path} is outside base directory")
+
+        file_path = abs_file_path
+
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             return f.read()

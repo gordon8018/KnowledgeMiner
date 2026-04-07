@@ -30,11 +30,30 @@ from src.core.exceptions import (
 class KnowledgeCompiler:
     """Main class that orchestrates the knowledge compilation process."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(
+        self,
+        config: Optional[Config] = None,
+        document_analyzer: Optional[DocumentAnalyzer] = None,
+        concept_extractor: Optional[ConceptExtractor] = None,
+        article_generator: Optional[ArticleGenerator] = None,
+        summary_generator: Optional[SummaryGenerator] = None,
+        backlink_generator: Optional[BacklinkGenerator] = None,
+        file_indexer: Optional[FileIndexer] = None,
+        category_indexer: Optional[CategoryIndexer] = None,
+        relation_mapper: Optional[RelationMapper] = None
+    ):
         """Initialize the KnowledgeCompiler.
 
         Args:
             config: Configuration instance (uses defaults if None)
+            document_analyzer: Optional DocumentAnalyzer instance (for dependency injection)
+            concept_extractor: Optional ConceptExtractor instance (for dependency injection)
+            article_generator: Optional ArticleGenerator instance (for dependency injection)
+            summary_generator: Optional SummaryGenerator instance (for dependency injection)
+            backlink_generator: Optional BacklinkGenerator instance (for dependency injection)
+            file_indexer: Optional FileIndexer instance (for dependency injection)
+            category_indexer: Optional CategoryIndexer instance (for dependency injection)
+            relation_mapper: Optional RelationMapper instance (for dependency injection)
         """
         # Handle dict config by converting to Config object
         if isinstance(config, dict):
@@ -43,17 +62,18 @@ class KnowledgeCompiler:
             self.config = config or Config()
         self.setup_logging()
 
-        # Initialize components
-        self.document_analyzer = DocumentAnalyzer()
-        self.concept_extractor = ConceptExtractor()
-        self.article_generator = ArticleGenerator()
-        self.summary_generator = SummaryGenerator()
-        self.backlink_generator = BacklinkGenerator()
+        # Initialize components with dependency injection support
+        # CODE QUALITY FIX: MEDIUM #3 - Add dependency injection to reduce coupling
+        self.document_analyzer = document_analyzer or DocumentAnalyzer()
+        self.concept_extractor = concept_extractor or ConceptExtractor()
+        self.article_generator = article_generator or ArticleGenerator()
+        self.summary_generator = summary_generator or SummaryGenerator()
+        self.backlink_generator = backlink_generator or BacklinkGenerator()
 
-        # Initialize indexers
-        self.file_indexer = FileIndexer()
-        self.category_indexer = CategoryIndexer()
-        self.relation_mapper = RelationMapper()
+        # Initialize indexers with dependency injection support
+        self.file_indexer = file_indexer or FileIndexer()
+        self.category_indexer = category_indexer or CategoryIndexer()
+        self.relation_mapper = relation_mapper or RelationMapper()
 
         # Processing state
         self.processed_documents: List[Document] = []
@@ -212,14 +232,20 @@ class KnowledgeCompiler:
         concept_count = 0
         for document in self.processed_documents:
             try:
-                # Read document content
-                doc_path = os.path.join(self.config.source_dir, document.path)
-                if not os.path.exists(doc_path):
-                    self.logger.warning(f"Document file not found: {doc_path}")
-                    continue
+                # PERFORMANCE FIX: HIGH #2 - Use cached content from document object
+                # The Document object already has the content from analyze phase,
+                # no need to read the file again
+                content = document.content
 
-                with open(doc_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                if not content:
+                    # Fallback: read from disk if content is not available
+                    doc_path = os.path.join(self.config.source_dir, document.path)
+                    if not os.path.exists(doc_path):
+                        self.logger.warning(f"Document file not found: {doc_path}")
+                        continue
+
+                    with open(doc_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
 
                 # Extract concepts from document content
                 concepts = self.concept_extractor.extract_concepts(content)
