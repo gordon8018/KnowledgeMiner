@@ -2,8 +2,11 @@
 Backlink generator for creating concept relationships.
 """
 
+import logging
 from typing import List, Dict, Set
 from src.models.concept import Concept
+
+logger = logging.getLogger(__name__)
 
 
 class BacklinkGenerator:
@@ -154,7 +157,7 @@ class BacklinkGenerator:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(backlinks, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"Warning: Could not save backlinks to {output_path}: {e}")
+            logger.warning(f"Could not save backlinks to {output_path}: {e}")
 
     def _save_all_relationships(self, all_relationships: Dict[str, Dict], output_dir: str):
         """
@@ -185,4 +188,4 @@ class BacklinkGenerator:
                 json.dump(all_relationships['summary'], f, indent=2, ensure_ascii=False)
 
         except Exception as e:
-            print(f"Warning: Could not save relationship data to {output_dir}: {e}")
+            logger.warning(f"Could not save relationship data to {output_dir}: {e}")

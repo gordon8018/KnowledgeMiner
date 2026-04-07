@@ -118,16 +118,22 @@ class WikiStore:
         file_path = self._get_page_path(page.id, page.page_type)
         file_path.write_text(page.content)
 
-        # Insert metadata into database
+        # Git commit FIRST (easier to rollback if it fails) (BUGFIX: NEW #3)
+        try:
+            self._git_commit(f"Create page: {page.id}", [str(file_path.relative_to(self.storage_path))])
+        except RuntimeError as e:
+            # Git failed - cleanup file and re-raise
+            if file_path.exists():
+                file_path.unlink()
+            raise e
+
+        # Git succeeded - now update database
         self.conn.execute(
             "INSERT INTO pages (id, title, page_type, version, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (page.id, page.title, page.page_type.value, page.version,
              page.created_at.isoformat(), page.updated_at.isoformat(), json.dumps(page.metadata))
         )
         self.conn.commit()
-
-        # Git commit
-        self._git_commit(f"Create page: {page.id}", [str(file_path.relative_to(self.storage_path))])
 
         return page
 
@@ -193,7 +199,16 @@ class WikiStore:
         file_path = self._get_page_path(page.id, page.page_type)
         file_path.write_text(page.content)
 
-        # Update database
+        # Git commit FIRST (easier to rollback if it fails) (BUGFIX: NEW #3)
+        try:
+            self._git_commit(f"Update page: {page.id}", [str(file_path.relative_to(self.storage_path))])
+        except RuntimeError as e:
+            # Git failed - rollback file and re-raise
+            file_path.write_text(existing.content)  # Restore original content
+            page.version = old_version  # Restore version
+            raise e
+
+        # Git succeeded - now update database
         self.conn.execute(
             "UPDATE pages SET title = ?, version = ?, updated_at = ?, metadata = ? WHERE id = ?",
             (page.title, new_version, page.updated_at.isoformat(), json.dumps(page.metadata), page.id)
@@ -205,9 +220,6 @@ class WikiStore:
             (page.id, new_version, old_version, "Page updated", page.updated_at.isoformat())
         )
         self.conn.commit()
-
-        # Git commit
-        self._git_commit(f"Update page: {page.id}", [str(file_path.relative_to(self.storage_path))])
 
         return page
 
@@ -226,8 +238,19 @@ class WikiStore:
         if not page:
             return False
 
-        # Delete file
+        # Get file path before deleting
         file_path = self._get_page_path(page_id, page.page_type)
+        relative_path = str(file_path.relative_to(self.storage_path))
+
+        # Git commit FIRST (easier to rollback if it fails) (BUGFIX: NEW #3)
+        # Note: Git needs the file to exist to add the deletion
+        try:
+            self._git_commit(f"Delete page: {page_id}", [relative_path])
+        except RuntimeError as e:
+            # Git failed - don't delete file or DB, just re-raise
+            raise e
+
+        # Git succeeded - now delete file and database
         if file_path.exists():
             file_path.unlink()
 
@@ -235,9 +258,6 @@ class WikiStore:
         self.conn.execute("DELETE FROM pages WHERE id = ?", (page_id,))
         self.conn.execute("DELETE FROM versions WHERE page_id = ?", (page_id,))
         self.conn.commit()
-
-        # Git commit
-        self._git_commit(f"Delete page: {page_id}", [])
 
         return True
 
@@ -277,3 +297,12 @@ class WikiStore:
         if hasattr(self, 'conn') and self.conn is not None:
             self.conn.close()
             self.conn = None
+
+    def __enter__(self):
+        """Support for context manager protocol (BUGFIX: MED-1)."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Cleanup on context exit (BUGFIX: MED-1)."""
+        self.close()
+        return False  # Don't suppress exceptions

@@ -74,39 +74,9 @@ class ConceptExtractor:
 
         return self.concepts
 
-    def _process_line(self, line: str, full_content: str):
-        """
-        Process a single line of content.
-
-        Args:
-            line: The line to process
-            full_content: The full content for pattern matching
-        """
-        # Check for concept heading
-        match = self.patterns.concept_pattern.match(line.strip())
-        if match:
-            # Save current concept if it exists
-            if self.current_concept:
-                self.concepts.append(self.current_concept)
-
-            # Create new concept with default values
-            concept_name = match.group(2).strip()
-            self.current_concept = Concept(
-                name=concept_name,
-                type=ConceptType.TERM,  # Default type
-                definition="",  # Will be filled later
-                criteria="",  # Will be filled later
-                applications=[],  # Will be filled later
-                cases=[],  # Will be filled later
-                formulas=[],  # Will be filled later
-                related_concepts=[],  # Will be filled later
-                backlinks=[]  # Will be filled later
-            )
-            return
-
-        # If we have a current concept, extract additional properties
-        if self.current_concept:
-            self._extract_concept_properties(full_content)
+    # DEAD CODE REMOVAL (BUGFIX: HIGH - _process_line called non-existent _extract_concept_properties)
+    # The _process_line method was never called and contained a bug. Removed entirely.
+    # The extract() method uses a different implementation based on match iteration.
 
     def _extract_properties_for_concept(self, concept: Concept, content: str):
         """

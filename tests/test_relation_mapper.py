@@ -402,7 +402,7 @@ class TestRelationMapper:
         # Set up test data
         concept = Mock(spec=Concept)
         concept.name = "Python"
-        concept.description = "A programming language"
+        concept.definition = "A programming language"
         concept.related_concepts = ["Programming"]
 
         self.mapper.add_concept(concept)
@@ -432,7 +432,7 @@ class TestRelationMapper:
         # Set up test data
         concept = Mock(spec=Concept)
         concept.name = "Python"
-        concept.description = "A programming language"
+        concept.definition = "A programming language"
 
         self.mapper.add_concept(concept)
         self.mapper.add_concept_relation("Python", "Programming", "related")
@@ -451,7 +451,7 @@ class TestRelationMapper:
         # Add a concept with no relations
         concept = Mock(spec=Concept)
         concept.name = "Python"
-        concept.description = "A programming language"
+        concept.definition = "A programming language"
 
         self.mapper.add_concept(concept)
 
@@ -469,7 +469,7 @@ class TestRelationMapper:
         # Set up test data
         concept = Mock(spec=Concept)
         concept.name = "Python"
-        concept.description = "A programming language"
+        concept.definition = "A programming language"
 
         self.mapper.add_concept(concept)
         self.mapper.add_concept_relation("Python", "Programming", "related")

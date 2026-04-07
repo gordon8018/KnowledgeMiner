@@ -208,6 +208,9 @@ class EmbeddingGenerator:
         if not texts:
             return []
 
+        # Ensure client is initialized (BUGFIX: NEW #1)
+        self._ensure_client()
+
         embeddings = []
 
         # Process in batches
@@ -265,6 +268,9 @@ class EmbeddingGenerator:
         Raises:
             RuntimeError: If API call fails after max retries
         """
+        # Ensure client is initialized (defensive programming)
+        self._ensure_client()
+
         last_error = None
 
         for attempt in range(self.max_retries + 1):

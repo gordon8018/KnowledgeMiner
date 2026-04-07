@@ -190,3 +190,32 @@ class StateManager:
             # Remove state file if it exists
             if os.path.exists(self.state_file_path):
                 os.remove(self.state_file_path)
+
+    def __enter__(self):
+        """Enter context manager (BUGFIX: MEDIUM - add context manager support).
+
+        Returns:
+            Self for context manager usage
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager with automatic save (BUGFIX: MEDIUM).
+
+        Args:
+            exc_type: Exception type if an exception was raised
+            exc_val: Exception value if an exception was raised
+            exc_tb: Exception traceback if an exception was raised
+
+        Returns:
+            False to indicate exceptions should not be suppressed
+        """
+        # Save state on exit (even if an exception occurred)
+        try:
+            self.save()
+        except Exception:
+            # Don't raise exceptions during cleanup
+            pass
+
+        return False  # Don't suppress exceptions
+
