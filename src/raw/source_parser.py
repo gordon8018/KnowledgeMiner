@@ -3,6 +3,7 @@ Source parsing functionality for Raw Sources layer
 """
 
 import re
+import yaml
 from typing import Dict, Any
 from src.raw.source_loader import RawSource
 
@@ -17,6 +18,11 @@ class SourceParser:
     Parses raw source documents and extracts frontmatter and content
     """
 
+    # Compile regex for better performance
+    # Match frontmatter between --- markers, allowing empty content
+    # Pattern handles both "---\n---\n" and "---\ncontent\n---\n" cases
+    FRONTMATTER_PATTERN = re.compile(r"^---\n([\s\S]*?)\n?---\n([\s\S]*)$")
+
     def parse(self, source: RawSource) -> Dict[str, Any]:
         """
         Parse a raw source and extract frontmatter and content
@@ -26,12 +32,14 @@ class SourceParser:
 
         Returns:
             Dictionary with frontmatter fields and content
+
+        Raises:
+            SourceParseError: If frontmatter is malformed
         """
         content = source.content
 
         # Check for YAML frontmatter
-        frontmatter_pattern = r"^---\n(.*?)\n---\n(.*)$"
-        match = re.match(frontmatter_pattern, content, re.DOTALL)
+        match = self.FRONTMATTER_PATTERN.match(content)
 
         if match:
             frontmatter_text, body_content = match.groups()
@@ -43,12 +51,8 @@ class SourceParser:
                 "path": source.path
             }
         else:
-            # No frontmatter - return default structure with None values
+            # No frontmatter - return basic structure
             result = {
-                "title": None,
-                "source_type": None,
-                "authors": None,
-                "tags": None,
                 "content": content.strip(),
                 "path": source.path
             }
@@ -57,29 +61,19 @@ class SourceParser:
 
     def _parse_yaml_frontmatter(self, text: str) -> Dict[str, Any]:
         """
-        Parse YAML frontmatter (simple implementation)
+        Parse YAML frontmatter using PyYAML
 
         Args:
             text: YAML frontmatter text
 
         Returns:
             Dictionary of frontmatter fields
+
+        Raises:
+            SourceParseError: If YAML is invalid
         """
-        result = {}
-
-        for line in text.split("\n"):
-            if ":" in line:
-                key, value = line.split(":", 1)
-                key = key.strip()
-                value = value.strip()
-
-                # Handle quoted strings
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                elif value.startswith("[") and value.endswith("]"):
-                    # Handle lists
-                    value = [v.strip().strip('"').strip("'") for v in value[1:-1].split(",") if v.strip()]
-
-                result[key] = value
-
-        return result
+        try:
+            parsed = yaml.safe_load(text)
+            return parsed if parsed is not None else {}
+        except yaml.YAMLError as e:
+            raise SourceParseError(f"Invalid YAML frontmatter: {e}")
